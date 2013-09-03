@@ -10,7 +10,9 @@ Everyday helpful commands:
 * git-fixup
 * git-local-branches
 * git-remote-branches
+* git-local-commits
 * git-repo
+* git-root
 * git-workon
 
 Common aliases:
@@ -31,6 +33,7 @@ codes and have no output.
 * git-is-repo
 * git-is-headless
 * git-has-local-changes / git-is-clean / git-is-dirty
+* git-has-local-commits
 * git-contains / git is-ancestor
 * git-local-branch-exists
 * git-remote-branch-exists
@@ -69,6 +72,9 @@ Typical example:
 
 ```console
 $ git sha HEAD
+f688d7543c5d52f5f78b3db1b0dd1616059299a4
+$ git sha -s HEAD
+f688d75
 ```
 
 Shows the commit SHA for the latest commit.
@@ -103,6 +109,13 @@ branches, can be asked to return only the branches in a specific remote.
 ### git local-branch-exists / git remote-branch-exists / git tag-exists
 
 Tests if the given local branch, remote branch, or tag exists.
+
+
+### git local-commits / git has-local-commits
+
+Returns a list of commits that are still in your local repo, but haven't been
+pushed to `origin`.  `git has-local-commits` is the scriptable equivalent that
+only returns an exit code if such commits exist.
 
 
 ### git contains / git is-ancestor
@@ -225,10 +238,20 @@ Helper function that determines whether the current directory has a Git repo
 associated to it.  Scriptable equivalent of `git repo`.
 
 
-### git repo
+### git root / git repo
 
-Prints the location of the Git directory, typically `.git`, but could differ
-based on the setup.  Will return with a non-zero exit code if not in a repo.
+`git root` prints the root location of the working tree.
+
+    $ cd /path/to/worktree
+    $ cd some/dir/in/worktree
+    $ pwd
+    /path/to/worktree/some/project/dir
+    $ git root
+    /path/to/worktree
+
+`git repo` prints the location of the Git directory, typically `.git`, but
+could differ based on your setup.  Will return with a non-zero exit code if not
+in a repo.
 
     $ cd /path/to/my/worktree
     $ git repo
