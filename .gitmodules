@@ -1,0 +1,3 @@
+[submodule "PowerShellCmdHist"]
+	path = PSReadline
+	url = https://github.com/perXautomatik/PowerShellCmdHist.git
