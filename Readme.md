@@ -1,49 +1,77 @@
+<div align="center">
+  <img src="./img/git-toolbelt.png" width="376" height="409" alt="git-toolbelt logo" /><br>
+</div>
+
+# Installation instructions
+
+    $ brew install moreutils fzf
+    $ brew tap nvie/tap
+    $ brew install nvie/tap/git-toolbelt
+
 # git-tools
 
-Helper tools to make everyday life with Git much easier.
+Helper tools to make everyday life with Git much easier.  Commands marked with
+⭐️ are my personal favorites and are commands I use almost every day.
 
 Everyday helpful commands:
 
-* git-current-branch
-* git-sha
-* git-cleanup
-* git-fixup
-* git-local-branches
-* git-remote-branches
-* git-local-commits
-* git-repo
-* git-root
-* git-workon
+* ⭐️ [git-cleanup](#git-cleanup)
+* ⭐️ [git-cleanup-squashed](#git-cleanup-squashed)
+* [git-current-branch](#git-current-branch)
+* ⭐️ [git-fixup](#git-fixup)
+* ⭐️ [git-fixup-with](#git-fixup-with)
+* ⭐️ [git-active-branches](#git-active-branches)
+* [git-local-branches](#git-local-branches)
+* [git-local-commits](#git-local-commits)
+* [git-merged / git-unmerged / git-merge-status](#git-merged--git-unmerged--git-merge-status)
+* [git-branches-containing](#git-branches-containing)
+* [git-recent-branches](#git-recent-branches)
+* [git-remote-branches](#git-remote-branches)
+* [git-remote-tracking-branch](#git-remote-tracking-branch)
+* [git-repo](#git-repo)
+* [git-root](#git-root)
+* [git-initial-commit](#git-initial-commit)
+* ⭐️ [git-sha](#git-sha)
+* [git-stage-all](#git-stage-all)
+* [git-unstage-all](#git-unstage-all)
+* [git-update-all](#git-update-all)
+* [git-workon](#git-workon)
+* ⭐️ [git-modified](#git-modified)
+* ⭐️ [git-modified-since](#git-modified-since)
+* ⭐️ [git-separator](#git-separator)
+* ⭐️ [git-spinoff](#git-spinoff)
 
-Common aliases:
+Statistics:
 
-* git-stage-all
-* git-unstage-all
+* [git-committer-info](#git-committer-info)
 
 Commands to help novices out:
 
-* git-drop-local-changes
-* git-push-current
-* git-undo-commit
-* git-undo-merge
+* [git-drop-local-changes](#git-drop-local-changes)
+* [git-stash-everything](#git-stash-everything)
+* ⭐️ [git-push-current](#git-push-current)
+* [git-undo-commit](#git-undo-commit)
+* [git-undo-merge](#git-undo-merge)
 
 Commands that simplify scripting. These commands typically only return exit
 codes and have no output.
 
-* git-is-repo
-* git-is-headless
-* git-has-local-changes / git-is-clean / git-is-dirty
-* git-has-local-commits
-* git-contains / git is-ancestor
-* git-local-branch-exists
-* git-remote-branch-exists
-* git-tag-exists
+* [git-is-repo](#git-is-repo)
+* [git-is-headless](#git-is-headless)
+* [git-has-local-changes / git-is-clean / git-is-dirty](#git-has-local-changes--git-is-clean--git-is-dirty)
+* [git-has-local-commits](#git-has-local-commits)
+* [git-contains / git is-ancestor](#git-contains--git-is-ancestor)
+* [git-local-branch-exists](#git-local-branch-exists)
+* [git-remote-branch-exists](#git-remote-branch-exists)
+* [git-tag-exists](#git-tag-exists)
 
 Advanced usage:
 
-* git-commit-to
-* git-cherry-pick-to
-* git-delouse
+* [git-assume / git-unassume / git-show-assumed](#git-assume--git-unassume--git-show-assumed)
+* [git-commit-to](#git-commit-to)
+* [git-cherry-pick-to](#git-cherry-pick-to)
+* ⭐️ [git-delouse](#git-delouse)
+* ⭐️ [git-shatter-by-file](#git-shatter-by-file)
 
 
 
@@ -80,6 +108,59 @@ f688d75
 Shows the commit SHA for the latest commit.
 
 
+### git modified
+
+Returns a list of locally modified files.  In contrast to git status, it does
+not include any detailed file status, and never includes non-existing files.
+
+This makes it ideal for the following use-case:
+
+```console
+$ vim (git modified)
+```
+
+If you want to locally modified files that are already staged, too, use:
+
+```console
+$ vim (git modified -i)
+```
+
+
+### git modified-since
+
+Like git-modified, but for printing a list of files that have been modified
+since master (or whatever commit specified).  In contrast to git status, it
+does not include any detailed file status, and never includes non-existing
+files.
+
+Opens all files modified on your branch (since you branched off `master`).
+
+```console
+$ vim (git modified-since)
+```
+
+
+### git separator
+
+Adds a commit with a message of only ---'s, so that it visually separates
+commits in the history.  This is incredibly useful when doing more complex
+rebase operations.  (They should be used as a temporary measure, and ideally
+taken out of the history again when done rebasing.)
+
+
+### git spinoff
+
+Inspired by Magit's `spinoff` command.  Creates and checks out
+a new branch starting at and tracking the current branch.  That
+branch in turn is reset to the last commit it shares with its
+upstream.  If the current branch has no upstream or no unpushed
+commits, then the new branch is created anyway and the previously
+current branch is not touched.
+
+This is useful to create a feature branch after work has already
+began on the old branch (likely but not necessarily "master").
+
+
 ### git push-current
 
 Pushed the current branch out to `origin`, and makes sure to setup tracking of
@@ -99,16 +180,36 @@ to force-push.
 Tests if `HEAD` is pointing to a branch head, or is detached.
 
 
-### git local-branches / git remote-branches
+### git local-branches / git remote-branches / git active-branches
 
 Returns a list of local or remote branches, but contrary to Git's default
 commands for this, returns them machine-processable.  In the case of remote
 branches, can be asked to return only the branches in a specific remote.
 
+A branch is deemed "active" if its head points to a commit authored in the last
+3 weeks.
+
 
 ### git local-branch-exists / git remote-branch-exists / git tag-exists
 
 Tests if the given local branch, remote branch, or tag exists.
+
+
+### git recent-branches
+
+Returns a list of local branches, ordered by recency:
+
+    $ git recent-branches
+    foo
+    master
+    bar
+    qux
+
+
+### git remote-tracking-branch
+
+Print the name of the remote tracking branch of the current or
+given local branch name, if one exists.  Errors otherwise.
 
 
 ### git local-commits / git has-local-commits
@@ -125,7 +226,7 @@ Tests if X is merged into Y:
     $ git contains X Y  # does X contain Y?
     $ git is-ancestor X Y  # is X an ancestor of Y?
 
-**CAVEAT:**  
+**CAVEAT:**
 Even though they might look like opposites, `X contains Y` does not mean `not
 (X is-ancestor Y)`, since (1) X and Y can point to the same commit, or the
 branches may have no common history and thus be unrelated completely.
@@ -167,6 +268,15 @@ Keeps other branches lying around.  Removes branches both locally and in the
 origin remote.  Will be most conservative with deletions.
 
 
+### git cleanup-squashed
+
+Deletes all branches that have already been merged into master by means of
+squash-merging them.  Squashing them generally is a destructive operation.
+This script only deletes the branches if the net diff has been fully merged
+into master.  If even the slightest difference is detected, the branch won't be
+deleted.
+
+
 ### git fixup
 
 Amend all local staged changes into the last commit. Ideal for fixing typo's,
@@ -178,12 +288,18 @@ when you don't want to re-edit the commit message.
     $ git fixup  # merge this little change back into the last commit
 
 
+### git fixup-with
+
+Interactively lets you pick a commit to fixup with.  (Uses `fzf` for the
+interactive picking.  Use `brew install fzf` to install this tool separately.)
+Use `-r` to trigger an interactive rebase right afterwards.
+
+
 ### git workon
 
-Convenience command for quickly switching to a branch <name>. If such local
-branch does not exist, but there is a remote branch named origin/<name>, then
-a local branch is created and the remote is tracked. If the local branch
-already exists, it's git pull --rebase'ed to update to the latest remote state.
+Convenience command for quickly switching to a branch `<name>`. If such local
+branch does not exist, but there is a remote branch named `origin/<name>`, then
+a local branch is created and the remote is tracked.
 
 
 ### git delouse
@@ -196,13 +312,26 @@ Since the commit remains in history, you can now rebuild the commit by "git
 amend"'ing or "git fixup"'ing, instead of making new commits.
 
 
+### git shatter-by-file
+
+Splits the last commit into N+1 commits, where N is the number of files in the
+last commit.  The first commit is an empty commit with the original commit
+message and author details, and the following commits add (or delete) one file
+each, keeping the subject line of the original commit message.
+
+After running `git shatter-by-file`, you'll typically want to run `git rebase
+--interactive` to start fixing up changes to files, etc.  For that purpose, the
+original commit message is kept in there (in the empty first commit), so make
+sure to use it.
+
+
 ### git commit-to
 
-Every been on a branch and really wanted to quickly commit a change to
+Ever been on a branch and really wanted to quickly commit a change to
 a different branch?  Given that this is possible without merge conflicts, git
 commit-to will allow you to do so, without checking out the branch necessarily.
 
-    $ git branch 
+    $ git branch
       master
     * mybranch
     $ git status
@@ -261,6 +390,14 @@ in a repo.
     fatal: Not a git repository (or any of the parent directories): .git
 
 
+### git initial-commit
+
+`git initial-commit` prints the initial commit for the repo.
+
+    $ git initial-commit
+    48c94a6a29e9e52ab63ce0fab578101ddc56a04f
+
+
 ### git has-local-changes / git is-clean / git is-dirty
 
 Helper function that determines whether there are local changes in the working
@@ -280,7 +417,51 @@ committed remains safe.
 ??? issue a git pull, too? Typical beginners will want this.
 
 
-### git force-checkout
+### git stash-everything
+
+The stash behaviour you (probably) always wanted.  This actually stashes
+everything what's in your index, in your working tree, and even stashes away
+your untracked files, leaving a totally clean working tree.
+
+Using "git stash pop" will recover all changes, including index state, locally
+modified files, and untracked files.
+
+
+### git update-all
+
+Updates all local branch heads to the remote's equivalent.  This is the same as
+checking out all local branches one-by-one and pulling the latest upstream
+changes.  Will only update if a pull succeeds cleanly (i.e. is a fast-forward
+pull).
+
+
+### git-merged / git-unmerged / git-merge-status
+
+This trio of subcommands makes it easy to inspect merge status of local
+branches.  Use them to check whether any local branches have or haven't been
+merged into the target branch (defaults to master).
+
+git-merge-status is a useful command that presents both lists in a single
+overview (not for machine processing).
+
+
+### git-branches-containing
+
+This command, "git branches-containing [<object>]" returns a list of branches
+which contain the specified '<object>' (defaults to 'HEAD').
+
+git-branches-containing is useful to see if a branch has been merged, and,
+if so, which releases contain the feature/fix (if you use release
+branches).
+
+
+### git-committer-info
+
+Shows contribution stats for the given committer, like "most productive day",
+"most productive hour", "average commit size", etc.
+
+
+### TODO: git force-checkout
 
 Don't care about your local working copy's state and really want to switch to
 another branch? git force-checkout lets you do this.
@@ -304,15 +485,54 @@ a branch anyway. **You do agree to lose data when using this command.**
 
 ### git conflicts
 
-Generates a summary for all (specified) branches that will merged
-uncleanly—i.e. will have merge conflicts later on.
+Generates a summary for all local branches that will merge uncleanly—i.e. will
+lead to merge conflicts later on.
 
     $ git branch
       develop
     * mybranch
       master
       other-branch
-    $ git conflicts -a
-    mybranch <-> develop: ok
-    mybranch <-> master: ok
-    mybranch <-> other-branch: CONFLICTS
+    $ git conflicts
+    develop... merges cleanly
+    master...  merges cleanly
+    other-branch... CONFLICTS AHEAD
+
+
+### git-assume / git-unassume / git-show-assumed
+
+Git supports marking files "assumed unchanged", meaning any change in the file
+locally will not be shown in status reports, or be added when you stage all
+files.  This feature can be useful to toggle some switches locally, or
+experiment with different settings, without running the risk of accidentally
+committing this local data (that should remain untouched in the repo).
+
+Notice that status reports won't show these files anymore, so it's also easily
+to lose track of these marked assumptions, and you probably run into weird
+issues if you don't remember this. (This is the reason why I put these scripts
+in the "advanced" category.)
+
+Basic usage:
+
+    $ git status
+     M foo.txt
+     M bar.txt
+     M qux.txt
+    $ git assume foo.txt
+    $ git status
+     M bar.txt
+     M qux.txt
+    $ git show-assumed
+    foo.txt
+    $ git commit -am 'Commit everything.'
+    $ git status
+    nothing to commit, working directory clean
+    $ git is-clean && echo "clean" || echo "not clean"
+    not clean
+    $ git unassume -a
+    $ git status
+     M foo.txt
+
+As you can see, `git-is-clean` is aware of any lurking "assumed unchanged"
+files, and won't report a clean working tree, as these assumed unchanged files
+often block the ability to check out different branches.
