@@ -7,3 +7,6 @@
 [submodule "EspHeaderExport"]
 	path = EspHeaderExport
 	url = https://github.com/perXautomatik/Esp-Header-Export.git
+[submodule "pshelAndbash"]
+	path = pshelAndbash
+	url = https://github.com/perXautomatik/PowerShell-and-bash.git
