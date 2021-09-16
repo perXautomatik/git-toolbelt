@@ -1,9 +1,3 @@
-[submodule "yamjyn.commandlist"]
-	path = yamjyn.commandlist
-	url = C:/Users/crbk01/AppData/Roaming/Code/User/globalStorage/yamajyn.commandlist
-[submodule "Esp-Header-Export"]
-	path = Esp-Header-Export
-	url = https://github.com/perXautomatik/Esp-Header-Export.git
 [submodule "EspHeaderExport"]
 	path = EspHeaderExport
 	url = https://github.com/perXautomatik/Esp-Header-Export.git
