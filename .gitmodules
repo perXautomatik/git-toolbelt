@@ -4,3 +4,12 @@
 [submodule "pshelAndbash"]
 	path = pshelAndbash
 	url = https://github.com/perXautomatik/PowerShell-and-bash.git
+[submodule "pshell"]
+	path = pshell
+	url = https://github.com/perXautomatik/PowerShell.git
+[submodule "createToutchedFile"]
+	path = createToutchedFile
+	url = https://github.com/perXautomatik/Powershell-CreateTouchedFile.git
+[submodule "groupIntoFolders"]
+	path = groupIntoFolders
+	url = https://github.com/perXautomatik/powershell-GroupIntoFolder.git
