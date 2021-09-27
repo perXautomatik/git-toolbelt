@@ -1,3 +1,3 @@
-[submodule "Script"]
-	path = Scripts
-	url = https://github.com/perXautomatik/PowerShell-Scripts.git
+[submodule "yamjyn.commandlist"]
+	path = yamjyn.commandlist
+	url = C:/Users/crbk01/AppData/Roaming/Code/User/globalStorage/yamajyn.commandlist
