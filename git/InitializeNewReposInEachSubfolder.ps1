@@ -1,4 +1,5 @@
-Function addToIgnored {
+
+Function NewRepo {
     [CmdletBinding()]
     param (
     
@@ -10,7 +11,8 @@ Function addToIgnored {
                     HelpMessage=" excluded dirs ")] 
         [string]$excluded
     )
-
-ls -path $root | Where-Object { $_.Name -notin $exluded } > .gitignore
+#'PortableApps.com'
+$root
+Get-ChildItem $root | Where-Object { $_.Name -notin $exluded }  |%{ git init $_ }
 
 }
