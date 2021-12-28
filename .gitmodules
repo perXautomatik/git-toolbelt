@@ -4,7 +4,7 @@
 [submodule "powershellAliasesUserProfile"]
 	path = powershellAliasesUserProfile
 	url = D:/Project Shelf/PowerShellProjectFolder/powershellAliasesUserProfile
-[submodule "Esp-Header-Export"]
+[submodule "EspHeaderExport"]
 	path = Scripts/EspHeaderExport
 	url = https://github.com/perXautomatik/Esp-Header-Export.git
 [submodule "Processes/regestry"]
