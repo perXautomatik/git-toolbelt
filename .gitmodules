@@ -1,0 +1,24 @@
+[submodule "Scripts/EspHeaderExport2"]
+	path = Scripts/EspHeaderExport2
+	url = https://github.com/perXautomatik/Esp-Header-Export.git
+[submodule "Scripts/xml2csv"]
+	path = Scripts/xml2csv
+	url = https://github.com/perXautomatik/fujitsu-xml2csv
+[submodule "Scripts2"]
+	path = Scripts2
+	url = https://github.com/perXautomatik/PowerShell-Scripts.git
+[submodule "Scripts/filesystem/groupIntoFolders2"]
+	path = Scripts/filesystem/groupIntoFolders2
+	url = https://github.com/perXautomatik/powershell-GroupIntoFolder.git
+[submodule "Scripts/filesystem/createToutchedFile2"]
+	path = Scripts/filesystem/createToutchedFile2
+	url = https://github.com/perXautomatik/Powershell-CreateTouchedFile.git
+[submodule "test2"]
+	path = test2
+	url = https://github.com/perXautomatik/PowerShell-and-bash.git
+[submodule "test3"]
+	path = test3
+	url = https://github.com/perXautomatik/PowerShell.git
+[submodule "Scripts/WindowsAdmin/forked-sysadmin2"]
+	path = Scripts/WindowsAdmin/forked-sysadmin2
+	url = https://github.com/perXautomatik/PowerShell.git
