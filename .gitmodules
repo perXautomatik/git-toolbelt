@@ -1,3 +1,18 @@
+[submodule "GeneralSourceCompare"]
+	path = Scripts/git/GeneralSourceCompare
+	url = D:/Project Shelf/PowerShellProjectFolder/GeneralSourceCompare/Forks/0cc040af9e7d768f13c998cde8dc414d
+[submodule "powershellAliasesUserProfile"]
+	path = powershellAliasesUserProfile
+	url = D:/Project Shelf/PowerShellProjectFolder/powershellAliasesUserProfile
 [submodule "Esp-Header-Export"]
-	path = Esp-Header-Export
+	path = Scripts/EspHeaderExport
 	url = https://github.com/perXautomatik/Esp-Header-Export.git
+[submodule "Processes/regestry"]
+	path = Scripts/Processes/regestry
+	url = https://gist.github.com/afba721727466476d3caefa5739a0767
+[submodule "Processes/pipeline"]
+	path = Scripts/Processes/pipeline
+	url = https://gist.github.com/3a93145c3526005f132cd563590f9ad3
+[submodule "Script"]
+	path = Scripts
+	url = https://github.com/perXautomatik/PowerShell-Scripts.git
