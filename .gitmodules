@@ -13,3 +13,6 @@
 [submodule "Processes/pipeline"]
 	path = Processes/pipeline
 	url = https://gist.github.com/3a93145c3526005f132cd563590f9ad3
+[submodule "TextTransformation/ini"]
+	path = TextTransformation/ini
+	url = C:/Users/dator/Documents/5960b271752d030383f0e5a591751e0d/.git
