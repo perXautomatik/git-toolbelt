@@ -16,3 +16,6 @@
 [submodule "TextTransformation/ini"]
 	path = TextTransformation/ini
 	url = C:/Users/dator/Documents/5960b271752d030383f0e5a591751e0d/.git
+[submodule "TextTransformation"]
+	path = TextTransformation
+	url = C:/Users/dator/AppData/Roaming/Microsoft/Windows/PowerShell/TextTransformation
