@@ -13,3 +13,6 @@
 [submodule "Processes/pipeline"]
 	path = Processes/pipeline
 	url = https://gist.github.com/3a93145c3526005f132cd563590f9ad3
+[submodule "PSReadline"]
+	path = PSReadline
+	url = https://github.com/perXautomatik/PowerShellCmdHist.git
