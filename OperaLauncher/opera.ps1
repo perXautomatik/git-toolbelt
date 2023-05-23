@@ -1,14 +1,32 @@
-﻿$a = 'a_wif'
+﻿$a = 'a_tur'
 $profileFolder = 'C:\Users\chris\AppData\Roaming\Opera Software\Opera GX Stable\_side_profiles'
 $rename = $true
 $RenameAfter = !($a -match 'a_') -or $rename
 $cloneIfempty = $true
+$launcher = "Z:\Program Files\Opera GX\launcher.exe";
 
+function RenameAsCopyMoveTask{
 
-function RenameAsCopyMoveTask{}
+$profilex = $a
+$presentFolders = Get-ChildItem -Path $profileFolder -Directory | Sort-Object -Property name, LastWriteTime -Descending 
 
-function SelectItemFromListBox($list)
+$SelectedFolder = ( $presentFolders | ? { $_.name -eq $profilex} | select name -First 1).Name
+
+if(!($SelectedFolder))
 {
+    $toRename = (selectItemFromListBox -list $presentFolders)
+                
+    $toRename | Rename-Item -NewName $profilex
+
+    $SelectedFolder = ( (Get-ChildItem -Path $profileFolder -Directory)   |
+              ? { $_.name -eq $profilex} |
+               select name -First 1).Name
+}
+
+return $SelectedFolder
+}
+
+function SelectItemFromListBox($list){
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -61,49 +79,7 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK)
 }
 }
 
-#--allow-profiles-outside-user-dir 
-#--allowlisted-extension-id ⊗	Adds the given extension ID to all the permission allowlists. ↪
-#--apps-gallery-download-url ⊗	The URL that the webstore APIs download extensions from. Note: the URL must contain one '%s' for the extension ID. ↪
-#--copy-to-download-dir ⊗	Copy user action data to download directory. ↪
-
-$profilex = $a
-$presentFolders = Get-ChildItem -Path $profileFolder -Directory | Sort-Object -Property name, LastWriteTime -Descending 
-$presentFolders             
-
-$SelectedFolder = ( $presentFolders   |
-                ? { $_.name -eq $profilex} |
-                    select name -First 1).Name
-
-if(!($SelectedFolder))
-{
-    $toRename = (selectItemFromListBox -list $presentFolders)
-                
-    $toRename | Rename-Item -NewName $profilex
-
-    $SelectedFolder = ( (Get-ChildItem -Path $profileFolder -Directory)   |
-              ? { $_.name -eq $profilex} |
-               select name -First 1).Name
-}
-
-
-function Launch_opera_profile ($profile) {
-$param = '--side-profile-name=' +'"'+ $profile+'"'
-$AllArgs = @($param, ' --with-feature:side-profiles --no-default-browser-check')
-
-echo $AllArgs
-
-    $processOptions = @{
-        FilePath = "C:\Program Files\Opera GX\launcher.exe"
-        ArgumentList = $AllArgs
-    }
-
-Start-Process @processOptions -Wait 
-
-}
-#'353238305F393330303834303437' 
-Launch_opera_profile $SelectedFolder 
-if($RenameAfter)
-{
+function rnAfter{if($RenameAfter){
     echo "after waiting"
 
     [void][Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic')
@@ -114,12 +90,48 @@ if($RenameAfter)
     $text = [Microsoft.VisualBasic.Interaction]::InputBox($msg, $title)
     if($text)
     {
-    ($profileFolder | Join-Path -ChildPath $profilex) | Rename-Item -NewName $text
+        ($profileFolder | Join-Path -ChildPath $profilex) | Rename-Item -NewName $text
     }
     else
     {
     echo "empty"
     }
+}
+}
 
+ 
+#--allowlisted-extension-id ⊗	Adds the given extension ID to all the permission allowlists. ↪
+#--apps-gallery-download-url ⊗	The URL that the webstore APIs download extensions from. Note: the URL must contain one '%s' for the extension ID. ↪
+#--copy-to-download-dir ⊗	Copy user action data to download directory. ↪
+
+function Launch_opera_profile ($profile) {
+    
+    if($profile)
+    {
+    #--allow-profiles-outside-user-dir
+        $param = '--side-profile-name=' +'"'+ $profile+'"'
+    }
+    else
+    {
+       $profile = $profileFolder+"\"+ $a;
+       $param = '--side-profile-name=' +'"'+ $profile+'"'
+    }
+    $AllArgs = @($param, '--with-feature:side-profiles --no-default-browser-check')
+
+    echo $AllArgs
+
+    $processOptions = @{
+        FilePath = $launcher
+        ArgumentList = $AllArgs
+    }
+
+    Start-Process @processOptions -Wait 
 
 }
+
+
+#'353238305F393330303834303437' 
+
+Launch_opera_profile -profile (RenameAsCopyMoveTask) ; rnAfter
+
+$presentFolders             
