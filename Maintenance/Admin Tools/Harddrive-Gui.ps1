@@ -1,0 +1,1 @@
+GWMI -class win32_volume | FL -property DriveLetter, DeviceID, filesystem
