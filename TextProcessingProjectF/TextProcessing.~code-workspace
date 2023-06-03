@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"triggerTaskOnSave.selectedTask": "Build"
+	},
+	"extensions": {
+		"recommendations": [
+			"emeraldwalk.runonsave",
+			"ryu1kn.partial-diff",
+			"danielroedl.meld-diff",
+			"keewek.compare-helper",
+			"shan.code-settings-sync",
+			"k9982874.github-gist-explorer",
+			"fabiospampinato.vscode-open-in-github",
+			"antfu.file-nesting",
+			"jannisx11.batch-rename-extension",
+			"muzaisimao.vscode-disable-extensions",
+			"symbolk.somanyconflicts"
+		]
+	}
+}
