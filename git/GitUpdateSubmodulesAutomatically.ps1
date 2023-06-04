@@ -1,6 +1,34 @@
 ﻿# Set the error action preference to stop on any error
 $ErrorActionPreference = "Stop"
 
+Import-Module PsIni
+
+function gitRemoveWorktree ($configPath)
+{
+    $iniContent = Get-IniContent -FilePath $configPath
+    $iniContent.core.Remove("worktree") ;
+    $iniContent | Out-IniFile -FilePath $configPath -Force
+}
+
+# Define a function to get the URL of a submodule
+function Get-SubmoduleUrl {
+  param(
+    [string]$Path # The path of the submodule directory
+  )
+  # Change the current location to the submodule directory
+  Push-Location -Path $Path -ErrorAction Stop
+  # Get the URL of the origin remote
+  $url = git config remote.origin.url -ErrorAction Stop
+  # Write the URL to the host
+  Write-Host $url
+  # Parse the URL to get the part after the colon
+  $parsedUrl = ($url -split ':')[1]
+  # Write the parsed URL to the host
+  Write-Host $parsedUrl
+  # Return to the previous location
+  Pop-Location -ErrorAction Stop
+}
+
 # Define a function to run git commands and check the exit code
 function Invoke-Git {
   param(
@@ -8,13 +36,16 @@ function Invoke-Git {
   )
   # Run the command and capture the output
   $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
-  # Write the output to the host
-  Write-Host $output
+  # return the output to the host
+  $output
   # Check the exit code and throw an exception if not zero
   if ($LASTEXITCODE -ne 0) {
     throw "Git command failed: git $Command"
   }
 }
+
+# Call the function with a submodule path
+Get-SubmoduleUrl "B:\ToGit\.git\modules\BucketTemplate"
 
 # Check the status of the submodules
 Invoke-Git "submodule status"
@@ -37,3 +68,4 @@ Invoke-Git "submodule update --init --recursive"
 
 # Push the changes to the remote repository
 Invoke-Git "push origin master"
+
