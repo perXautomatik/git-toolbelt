@@ -1,7 +1,7 @@
 ﻿# Set folder to watch and file filter
 $watcher = New-Object System.IO.FileSystemWatcher
-$watcher.Path = "C:\Documents"
-$watcher.Filter = "*.pdf"
+$watcher.Path = "C:\Program Files (x86)\Steam\steamapps\common\STALKER Shadow of Chernobyl"
+#$watcher.Filter = "*.pdf"
 $watcher.IncludeSubdirectories = $true
 $watcher.EnableRaisingEvents = $true
 
@@ -11,11 +11,12 @@ $action = {
     $path = $Event.SourceEventArgs.FullPath
 
     # Copy the file to the backup folder
-    Copy-Item -Path $path -Destination "D:\Backup" -Force
+    #Copy-Item -Path $path -Destination "D:\Backup" -Force
 
     # Write a log entry with the date, time and file name
     $logline = "$(Get-Date), Copied, $path"
-    Add-content "C:\Documents\log.txt" -value $logline
+    $logline
+    #Add-content "C:\Documents\log.txt" -value $logline
 }
 
 # Register the action to watch for the Created event
