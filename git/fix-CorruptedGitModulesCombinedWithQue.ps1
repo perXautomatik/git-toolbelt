@@ -3,121 +3,115 @@
     Push-Location
 
     # Validate the arguments
-    if (-not (Test-Path -LiteralPath $modules)) { 
+    if (-not (Test-Path $modules)) { 
       Write-Error "Invalid modules path: $modules"
       exit 1
     }
 
-    if (-not (Test-Path -LiteralPath $folder)) {
-      Write-Error "Invalid folder path: $folder"
+    if (-not (Test-Path $start)) {
+      Write-Error "Invalid start path: $start"
       exit 1
     }
 
     # Redirect the standard error output of git commands to the standard output stream
     $env:GIT_REDIRECT_STDERR = '2>&1'
 
+    Write-Progress -Activity "Processing files" -Status "Starting" -PercentComplete 0
+
+    # Create a queue to store the paths
+    $que = New-Object System.Collections.Queue
+
+    # Enqueue the start path
+    $start | % { $que.Enqueue($_) }
+
     # Initialize a counter variable
     $i = 0;
-
-    # Define parameters for Write-Progress cmdlet
-    $progressParams = @{
-        Activity = "Processing files"
-        Status = "Starting"
-        PercentComplete = 0
-    }
 }
 process {
 
-    # Get all the subdirectories in $folder, excluding any .git files or folders
-    $subdirs = Get-ChildItem -LiteralPath $folder -Directory -Recurse -Filter "*"
+    # Loop through the queue until it is empty
+    do
+    {    
+        # Increment the counter
+        $i++;
 
-    # Loop through each subdirectory
-    foreach ($subdir in $subdirs) {
-      
-      # Increment the counter
-      $i++;
+        # Dequeue a path from the queue
+        $path = $que.Dequeue()
 
-      # Change the current directory to the subdirectory
-      Set-Location $subdir.FullName
+        # Change the current directory to the path
+        Set-Location $path;
 
-      # Run git status and capture the output
-      $output = git status
+        # Run git status and capture the output
+        $output = git status
 
-      # Check if the output is fatal
-      if($output -like "fatal*")
-      {
-          # Print a message indicating fatal status
-          Write-Output "fatal status for $subdir"
+        # Check if the output is fatal
+        if($output -like "fatal*")
+        {
+            # Print a message indicating fatal status
+            Write-Output "fatal status for $path"
 
-          # Get the .git file or folder in that subdirectory
-          $gitFile = Get-ChildItem -LiteralPath "$subdir\*" -Force | Where-Object { $_.Name -eq ".git" }
+            # Get the .git file or folder in that path
+            $toRepair = Get-ChildItem -Path "$path\*" -Force | Where-Object { $_.Name -eq ".git" }
 
-          # Check if it is a file or a folder
-          if( $gitFile -is [System.IO.FileInfo] )
-          {
-              # Define parameters for Move-Item cmdlet
-              $moveParams = @{
-                  Path = Join-Path -Path $modules -ChildPath $gitFile.Directory.Name
-                  Destination = $gitFile
-                  Force = $true
-                  PassThru = $true
-              }
+            # Check if it is a file or a folder
+            if( $toRepair -is [System.IO.FileInfo] )
+            {
+                # Get the module folder that matches the name of the parent directory
+                $module = Get-ChildItem -Path $modules -Directory | Where-Object { $_.Name -eq $toRepair.Directory.Name } | Select-Object -First 1
 
-              # Move the module folder to replace the .git file and return the moved item
-              $movedItem = Move-Item @moveParams
-
-              # Print a message indicating successful move
-              Write-Output "moved $($movedItem.Name) to $($movedItem.DirectoryName)"
-          }
-          elseif( $gitFile -is [System.IO.DirectoryInfo] )
-          {
-              # Get the path to the git config file
-              $configFile = Join-Path -Path $gitFile -ChildPath "\config"
+                # Move the module folder to replace the .git file
+                Remove-Item -Path $toRepair -Force 
+                Move-Item -Path $module.FullName -Destination $toRepair -Force 
+            }
+            elseif( $toRepair -is [System.IO.DirectoryInfo] )
+            {
+                # Get the path to the git config file
+                $configFile = Join-Path -Path $toRepair -ChildPath "\config"
     
-              # Check if it exists
-              if (-not (Test-Path -LiteralPath $configFile)) {
-                Write-Error "Invalid folder path: $gitFile"  
-              }
-              else
-              {
-                  # Read the config file content as a single string
-                  $configContent = Get-Content -LiteralPath $configFile -Raw
+                # Check if it exists
+                if (-not (Test-Path $configFile)) {
+                  Write-Error "Invalid folder path: $toRepair"  
+                }
+                else
+                {
+                    # Read the config file content as an array of lines
+                    $configLines = Get-Content -Path $configFile
 
-                  # Remove any line that contains worktree and store the new content in a variable
-                  $newConfigContent = $configContent -Replace "(?m)^.*worktree.*$\r?\n?"
+                    # Filter out the lines that contain worktree
+                    $newConfigLines = $configLines | Where-Object { $_ -notmatch "worktree" }
 
-                  # Check if there are any lines to remove
-                  if ($configContent -ne $newConfigContent)
-                  {
-                      # Write the new config file content
-                      $newConfigContent | Set-Content -LiteralPath $configFile -Force
+                    # Check if there are any lines to remove
+                    if (($configLines | Where-Object { $_ -match "worktree" }))
+                    {
+                        # Write the new config file content
+                        Set-Content -Path $configFile -Value $newConfigLines -Force
+                    }
+                }
+            }
+            else
+            {
+                # Print an error message if it is not a file or a folder
+                Write-Error "not a .git file or folder: $toRepair"
+            }
+        }
+        else
+        {
+            # Get the subdirectories of the path and enqueue them, excluding any .git folders
+            Get-ChildItem -Path "$path\*" -Directory -Exclude "*.git*" | % { $que.Enqueue($_.FullName) }
+        }
 
-                      # Print a message indicating successful removal
-                      Write-Output "removed worktree from $configFile"
-                  }
-              }
-          }
-          else
-          {
-              # Print an error message if it is not a file or a folder
-              Write-Error "not a .git file or folder: $gitFile"
-          }
-      }
+        # Calculate the percentage of directories processed
+        $percentComplete =  ($i / ($que.count+$i) ) * 100
 
-      # Calculate the percentage of directories processed
-      $percentComplete =  ($i / ($subdirs.count+$i) ) * 100
-
-      # Update the progress bar
-      $progressParams.PercentComplete = $percentComplete
-      Write-Progress @progressParams
+        # Update the progress bar
+        Write-Progress -Activity "Processing files" -PercentComplete $percentComplete
      
-    } 
+    } while ($que.Count -gt 0)
 }
 end {
     # Restore the original location
     Pop-Location
 
     # Complete the progress bar
-    $progressParams.Status = "Finished"
-    Write-Progress @progressParams
+    Write-Progress -Activity "Processing files" -Status "Finished" -PercentComplete 100
 }
