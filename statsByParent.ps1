@@ -18,11 +18,26 @@ function Get-ParentFolders ($paths) {
     }
   }
 
-  # Sort the hashtable by the count value in descending order
-  $sortedParentFolders = $parentFolders.GetEnumerator() | Sort-Object -Property Value -Descending
+  # Create an empty hashtable to store the subpaths and their parent folders
+  $subpaths = @{}
 
-  # Return the sorted hashtable
-  return $sortedParentFolders
+  # Loop through each parent folder in the hashtable
+  foreach ($parentFolder in $parentFolders.Keys) {
+    # Get the subpath of the parent folder by removing the drive letter and colon
+    $subpath = $parentFolder -replace "^[A-Z]:"
+
+    # If the subpath already exists in the hashtable, add the parent folder and its count to its value
+    if ($subpaths.ContainsKey($subpath)) {
+      $subpaths[$subpath] += @{"$parentFolder" = $parentFolders[$parentFolder]}
+    }
+    # Otherwise, create a new entry in the hashtable with the subpath as the key and the parent folder and its count as the value
+    else {
+      $subpaths[$subpath] = @{"$parentFolder" = $parentFolders[$parentFolder]}
+    }
+  }
+
+  # Return the subpaths hashtable
+  return $subpaths
 }
 
 # Test the function with some sample paths
