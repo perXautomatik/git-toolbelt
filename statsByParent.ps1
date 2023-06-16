@@ -36,8 +36,11 @@ function Get-ParentFolders ($paths) {
     }
   }
 
-  # Return the subpaths hashtable
-  return $subpaths
+  # Sort the subpaths hashtable by the sum of the counts of their parent folders in descending order
+  $sortedSubpaths = $subpaths.GetEnumerator() | Sort-Object -Property {($_.Value.Values | Measure-Object -Sum).Sum} -Descending
+
+  # Return the sorted subpaths hashtable
+  return $sortedSubpaths
 }
 
 # Test the function with some sample paths
