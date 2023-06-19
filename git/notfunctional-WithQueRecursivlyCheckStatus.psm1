@@ -88,29 +88,3 @@ process {
         }    
 
   }
-
-
-cd 'D:\Project Shelf\NoteTakingProjectFolder\GistNotebook\xMarks'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-cd 'B:\ToGit'
-
-
-Set-Alias -Name 'invoke-everything' -Value "C:\Program Files\Everything\Everything.exe"
-
-everything -help
