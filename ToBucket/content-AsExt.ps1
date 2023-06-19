@@ -1,0 +1,1 @@
+function get-contentAsExt ($path,$ext){ $TempFile = New-TemporaryFile ; Get-Content $path | Set-Content $TempFile ; Rename-Item $TempFile ($tempFile.name -replace '.tmp', $ext) -PassThru }
