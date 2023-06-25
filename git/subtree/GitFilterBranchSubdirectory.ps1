@@ -36,19 +36,38 @@ function Push-Git-Subtree {
         [string]
         $DestinationPrefix
     )
+    Push-Location
 
+    # Check if the path is valid
+    if (Test-Path $baseRepo) {
+      # Move to the path
     # Change the current location to the source directory
-    Set-Location -Path $SourceDir
+      Set-Location $baseRepo
+        
+      git-status $baseRepo
+      git-status $targetRepo
 
     # Push all branches to the destination directory
-    git push --all $DestinationDir
+        git push --all $targetRepo
 
     # Change the current location to the destination directory
-    Set-Location -Path $DestinationDir
+        cd $toFilterRepo
 
     # Filter out the subdirectory from the original repository and add it as a prefix
-    git filter-branch -f --subdirectory-filter $SourceSubdir -- --all
+        git filter-branch -f --subdirectory-filter $toFilterBy -- --all 
 
-    # Pull in any new commits to the subtree from the source directory
-    git subtree pull --prefix $DestinationPrefix "$SourceDir\.git" master
+        #If you want to pull in any new commits to the subtree from the remote:
+
+        git subtree pull --prefix $toFilterBy $baseRepo $branchName
+    
+      # Do something else here
+    }
+    else {
+      # Write an error message to the standard error stream
+      Write-Error "The path $path does not exist."
+      # Exit with a non-zero exit code
+      exit 1
+    }
+
+    Pop-Location
 }
