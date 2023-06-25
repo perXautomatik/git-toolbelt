@@ -10,9 +10,6 @@
             git clone --reference $objectRepo $repo 
             cd ps1 -PassThru
             Write-Output "---"
-            $file
-            filterByName $file
-            Write-Output "--reniv--"
         }
         catch {
             Write-Error "Failed to change directory to $subfolder"
