@@ -16,6 +16,8 @@ The path of the destination directory where the other git repository is located.
 
 .PARAMETER DestinationPrefix
 The prefix that will be added to the subdirectory in the destination repository.
+
+function FilterBySubdirectory($baseRepo = 'C:\Users\chris\AppData', $targetRepo = 'D:\ToGit\AppData',$toFilterRepo = 'D:\ToGit\Vortex', $toFilterBy = 'Roaming/Vortex/', $branchName = 'LargeINcluding' )
 #>
 function Push-Git-Subtree {
     [CmdletBinding()]
@@ -51,7 +53,7 @@ function Push-Git-Subtree {
         git push --all $targetRepo
 
     # Change the current location to the destination directory
-        cd $toFilterRepo
+        cd $targetRepo
 
     # Filter out the subdirectory from the original repository and add it as a prefix
         git filter-branch -f --subdirectory-filter $toFilterBy -- --all 
