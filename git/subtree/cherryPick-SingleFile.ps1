@@ -1,10 +1,27 @@
 
-function cherryPick-byPattern ($pattern)
+  
+function cherryPick-byPattern
 {
-    $hashesThatToutches = Invoke-Expression "git log --follow --format=%H -- $pattern"
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [String]
+        $pattern
+    )
+    process{
+        $latest = Invoke-Expression "git rev-parse HEAD"
 
-    $last = ( $hashesThatToutches | select -last 1 )
-    $last 
-    git checkout -b $pattern $last
-    
+        $hashesThatToutches = Invoke-Expression "git log --follow --format=%H -- $pattern"
+        $last = @($hashesThatToutches)[-1]
+        if ($last -eq $latest)
+        {
+            # Write an error message to the standard error stream                        
+            throw "$last -eq $latest"
+        }
+
+        $last 
+        git checkout -b $pattern $last
+
+
+    }
 }
