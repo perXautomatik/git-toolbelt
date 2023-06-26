@@ -79,6 +79,6 @@ foreach ($lines in @($lines1,$lines2))
         $target = $lines1[$i+1]
         "$source,$target,Directed" | Out-File $edgeFile -Append
     }
-}
+
 
 # Import the CSV files into Gephi using the Data Laboratory
