@@ -30,9 +30,8 @@ function branch-byPattern
             # Write an error message to the standard error stream                        
             throw "$last -eq first"
         }
-
-        $last 
-        Invoke-Expression "git branch $pattern $last"
+        
+        $null = Invoke-Expression "git branch $pattern $last"
         return $pattern
 
     }

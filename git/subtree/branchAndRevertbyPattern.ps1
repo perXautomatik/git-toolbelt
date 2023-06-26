@@ -15,11 +15,11 @@ function Revert-byPattern
     process{
         if ($branch) { git checkout $branch }
 
-        $latest = Invoke-Expression "git rev-parse HEAD"
-        $first = Invoke-Expression "git rev-list --max-parents=0 HEAD"
-
         $hashesThatToutches = Invoke-Expression "git log --follow --format=%H -- $pattern"
+        "If you want to see the log of the revision, you can use:"
+        $hashesOfbranch = Invoke-Expression "git rev-list $branch --"
         $last = @($hashesThatToutches)[-1]
+
         if ($last -eq $latest)
         {
             # Write an error message to the standard error stream                        
@@ -30,9 +30,12 @@ function Revert-byPattern
             # Write an error message to the standard error stream                        
             throw "$last -eq first"
         }
+        
+        $notInMatch = $hashesOfbranch | ? { $_ -cnotin $hashesThatToutches  }
+        "-----rewerting------"
+        $notInMatch | % { invoke-expression "git clean -f" ; invoke-expression "git revert $_" ; invoke-expression "git branch --show-current" ; invoke-expression ("git commit -m " + """" + "revert $_" + """")}
+        "-----done rewerting------"
 
-        $last 
-        git branch $pattern $last        
 
     }
 }
