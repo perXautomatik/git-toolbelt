@@ -7,35 +7,43 @@ function Revert-byPattern
         [Parameter(Mandatory=$true)]#mandatory
         [String]
         $pattern,
-        [Parameter (Mandatory=$false)] 
+        [Parameter (Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
        # [ValidateScript({$_ | Resolve-Path})]
         [String]$branch
     )
-
-    process{
-        if ($branch) { git checkout $branch }
-
-        $hashesThatToutches = Invoke-Expression "git log --follow --format=%H -- $pattern"
-        "If you want to see the log of the revision, you can use:"
-        $hashesOfbranch = Invoke-Expression "git rev-list $branch --"
-        $last = @($hashesThatToutches)[-1]
-
-        if ($last -eq $latest)
-        {
-            # Write an error message to the standard error stream                        
-            throw "$last -eq latest"
+    begin{
+        $pattern = $pattern.trim()
+        if ($branch) {
+            $branch = $branch.trim()    
+            git checkout master
+            $hashesThatToutches = @( Invoke-Expression "git log --follow --format=%H -- $pattern" )
+            $checkout = invoke-expression "git checkout $branch"
+            if(!(($checkout[-1] -match "Switched to ") -or ($checkout -match "Switched to ")))
+            {
+                throw $checkout
+            }
         }
-        if ($last -in $first)
-        {
-            # Write an error message to the standard error stream                        
-            throw "$last -eq first"
-        }
+
+
+        #If you want to see the log of the revision, you can use:
+        $hashesOfbranch = @( Invoke-Expression "git rev-list $branch --")
+        $hashesOfbranch.Count / $hashesThatToutches.Count
         
-        $notInMatch = $hashesOfbranch | ? { $_ -cnotin $hashesThatToutches  }
-        "-----rewerting------"
-        $notInMatch | % { invoke-expression "git clean -f" ; invoke-expression "git revert $_" ; invoke-expression "git branch --show-current" ; invoke-expression ("git commit -m " + """" + "revert $_" + """")}
-        "-----done rewerting------"
-
-
     }
+    process{
+
+        
+        $hashesOfbranch | ? { $_ -cnotin $hashesThatToutches  } | % { 
+            $sha = $_
+            $c =  invoke-expression "git clean -f" ; 
+            $re =  invoke-expression "git reset --hard $branch --"
+            $s =  invoke-expression "git branch --show-current" ;   
+
+            $r = invoke-expression "git revert $sha --" ;             
+            $o = invoke-expression ("git commit -m " + """" + "revert $sha" + """")}
+        ".... rewriting  .... "
+            $r
+        "-|rewrote: $branch"
+        }
 }
