@@ -25,10 +25,9 @@ function CloneWithReference( $repo, $objectRepo, $path )
     Push-Location
     
     cd $path
-
-    $outputx = invoke-git "clone --reference $objectRepo $repo "
-
-    $path | Add-Member -MemberType NoteProperty -Name GitStatus -Value $outputx -PassThru
-
+    #To clone a repository into a folder without creating a subdirectory, you can use the git clone command with the .
+    $outputx = invoke-git "clone --reference $objectRepo $repo ."
     Pop-Location
+    
+    return ([System.IO.Path]::GetFileName($path) | Add-Member -MemberType NoteProperty -Name GitStatus -Value $outputx)
 }
