@@ -230,14 +230,14 @@ function get-Origin
 		Write-Verbos '************************** ref *****************************'
 		Write-Verbos $ref.ToString()
 		Write-Verbos '************************** ref *****************************'
-		return $ref	
+		return $ref
 }
 
 function get-Relative {
 	param (
 		$path
 		,$targetFolder
-	)	
+	)
 	Set-Location $path
 	$gitRoot = Get-GitRoot
 
@@ -256,7 +256,7 @@ function get-Relative {
 	function Get-GitRoot {
 	    (git rev-parse --show-toplevel)
 	}
-	
+
 	function git-root {
 		$gitrootdir = (git rev-parse --show-toplevel)
 		if ($gitrootdir) {
@@ -332,7 +332,7 @@ function get-Relative {
 	{
 
 			$vb = ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent -eq $true)
-			
+
 				# Write some information to the console
 			Write-Verbos '************************************************************' -Verbose: $vb
 			Write-Verbos $targetFolder.ToString() -Verbose: $vb
@@ -343,7 +343,7 @@ function get-Relative {
 
 	}
 
-	
+
 <#
 .SYNOPSIS
 Gets the paths of all submodules in a git repository.
@@ -360,8 +360,8 @@ function Get-SubmodulePaths {
 
     # loop through each line of output
     foreach ($Line in $Input) {
-        # split the line by whitespace and get the last element as the path
-        $Line -split "\s+" | Select-Object -Last 1
+	# split the line by whitespace and get the last element as the path
+	$Line -split "\s+" | Select-Object -Last 1
     }
 }
 
@@ -380,8 +380,8 @@ System.String
 #>
 function Get-GitDir {
     param (
-        [Parameter(Mandatory)]
-        [string]$Path
+	[Parameter(Mandatory)]
+	[string]$Path
     )
 
     # read the .git file and get the value after "gitdir: "
@@ -404,12 +404,12 @@ The path of the submodule.
 #>
 function Unset-CoreWorktree {
     param (
-        [Parameter(Mandatory)]
-        [string]$Path
+	[Parameter(Mandatory)]
+	[string]$Path
     )
 
     # run git config --local --path --unset core.worktree for the submodule
-    git --work-tree=$Path --git-dir="$Path/.git" config --local --path --unset core.worktree 
+    git --work-tree=$Path --git-dir="$Path/.git" config --local --path --unset core.worktree
 }
 
 <#
@@ -419,18 +419,104 @@ Hides the .git directory on Windows.
 .DESCRIPTION
 Hides the .git directory on Windows by running attrib.exe +H /D.
 
-.PARAMETER Path 
+.PARAMETER Path
 The path of the submodule.
 #>
 function Hide-GitDir {
     param (
-        [Parameter(Mandatory)]
-        [string]$Path 
+	[Parameter(Mandatory)]
+	[string]$Path
     )
 
-    # check if attrib.exe is available on Windows 
+    # check if attrib.exe is available on Windows
     if (Get-Command attrib.exe) {
-        # run attrib.exe +H /D to hide the .git directory 
-        MSYS2_ARG_CONV_EXCL="*" attrib.exe "+H" "/D" "$Path/.git"
+	# run attrib.exe +H /D to hide the .git directory
+	MSYS2_ARG_CONV_EXCL="*" attrib.exe "+H" "/D" "$Path/.git"
     }
 }
+
+
+<# .SYNOPSIS
+Lists all the ignored files that are cached in the index.
+
+.DESCRIPTION
+This function uses git ls-files with the -c, --ignored and --exclude-standard options to list all the files that are ignored by
+Use git ls-files with the -c, --ignored and --exclude-standard options
+.gitignore or other exclude files, and also have their content cached in the index. #>
+function Get-IgnoredFiles {
+
+
+git ls-files -s --ignored --exclude-standard -c }
+
+
+<# .SYNOPSIS
+Removes files from the index and the working tree.
+
+.DESCRIPTION
+This function takes an array of file names as input and uses git rm to remove them from the index and the working tree.
+Define a function that removes files from the index and the working tree
+.PARAMETER
+ Files An array of file names to be removed. #>
+function Remove-Files { param( # Accept an array of file names as input
+[string[]]$Files )
+
+#Use git rm with the file names as arguments
+git rm $Files --ignore-unmatch }
+
+<# .SYNOPSIS
+Rewrites the history of the current branch by removing all the ignored files.
+
+.DESCRIPTION
+This function uses git filter-branch with the -f, --index-filter and --prune-empty options to rewrite the history of the current branch by removing all the ignored files from each revision, and also removing any empty commits that result from this operation. It does this by modifying only the index, not the working tree, of each revision.
+#Define a function that rewrites the history of the current branch by removing all the ignored files
+#Use git filter-branch with the -f, --index-filter and --prune-empty options#>
+
+function Rewrite-History {    # Call the Get-IgnoredFiles function and pipe the output to Remove-Files function
+
+    git filter-branch -f --index-filter {
+	Get-IgnoredFiles | Remove-Files
+	} --prune-empty }
+
+#Call the Rewrite-History function
+<# .SYNOPSIS
+Lists all the ignored files that are cached in the index.
+
+.DESCRIPTION
+This function uses git ls-files with the -c, --ignored and --exclude-standard options to list all the files that are ignored by
+Use git ls-files with the -c, --ignored and --exclude-standard options
+.gitignore or other exclude files, and also have their content cached in the index. #>
+function Get-IgnoredFiles {
+
+
+git ls-files -s --ignored --exclude-standard -c }
+
+
+<# .SYNOPSIS
+Removes files from the index and the working tree.
+
+.DESCRIPTION
+This function takes an array of file names as input and uses git rm to remove them from the index and the working tree.
+Define a function that removes files from the index and the working tree
+.PARAMETER
+ Files An array of file names to be removed. #>
+function Remove-Files { param( # Accept an array of file names as input
+[string[]]$Files )
+
+#Use git rm with the file names as arguments
+git rm $Files --ignore-unmatch }
+
+<# .SYNOPSIS
+Rewrites the history of the current branch by removing all the ignored files.
+
+.DESCRIPTION
+This function uses git filter-branch with the -f, --index-filter and --prune-empty options to rewrite the history of the current branch by removing all the ignored files from each revision, and also removing any empty commits that result from this operation. It does this by modifying only the index, not the working tree, of each revision.
+#Define a function that rewrites the history of the current branch by removing all the ignored files
+#Use git filter-branch with the -f, --index-filter and --prune-empty options#>
+
+function Rewrite-History {    # Call the Get-IgnoredFiles function and pipe the output to Remove-Files function
+
+    git filter-branch -f --index-filter {
+	Get-IgnoredFiles | Remove-Files
+	} --prune-empty }
+
+#Call the Rewrite-History function Rewrite-History
