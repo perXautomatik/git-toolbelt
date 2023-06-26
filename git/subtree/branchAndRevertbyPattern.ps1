@@ -1,6 +1,6 @@
 
   
-function branch-byPattern
+function Revert-byPattern
 {
     [CmdletBinding()]
     param (
@@ -8,12 +8,12 @@ function branch-byPattern
         [String]
         $pattern,
         [Parameter (Mandatory=$false)] 
-        [ValidateScript({$_ | Resolve-Path})]
-        [String]$path
+       # [ValidateScript({$_ | Resolve-Path})]
+        [String]$branch
     )
 
     process{
-        if ($path) { cd $path }
+        if ($branch) { git checkout $branch }
 
         $latest = Invoke-Expression "git rev-parse HEAD"
         $first = Invoke-Expression "git rev-list --max-parents=0 HEAD"
@@ -32,8 +32,7 @@ function branch-byPattern
         }
 
         $last 
-        Invoke-Expression "git branch $pattern $last"
-        return $pattern
+        git branch $pattern $last        
 
     }
 }
