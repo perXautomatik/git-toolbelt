@@ -1,10 +1,18 @@
 ﻿function compareObjectWithBeyondCompare() {
     param (
     $file1,
-    $file2,
-    $scriptPath
+    $file2
     )
 
+    $u = New-TemporaryFile
+
+    $d = 'file-report layout:statistics &
+output-to:clipboard &
+ output-options:html-color "%1" "%2"'
+
+    $d | Set-Content -Path $u
+
+    $scriptPath = "@$u"
 
     bcomp $scriptPath $file1 $file2   # sets clipboard 
  
