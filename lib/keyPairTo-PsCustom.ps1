@@ -1,3 +1,4 @@
+﻿# array with key pairs d
   function keyPairTo-PsCustom {
         <#
         .SYNOPSIS
@@ -21,34 +22,15 @@
         param (
             [Parameter(Mandatory=$true)]
             [string[]]$KeyPairStrings
-        )
-        
-        $resolved = @();
-        $dd = $KeyPairStrings | ConvertTo-Json
-        
-        # Loop through each element in the array using a for loop
-for ($i = 0; $i -lt $KeyPairStrings.Length; $i++) {
-    # Get the current element from the array by its index
-    $d = $KeyPairStrings[$i] -split " "
+    $Delim = '='
+    )
     
-    # Create a hashtable to store the key-value pairs
-    $data = @{}
-    
-    # Loop through each element in the sub-array using another for loop
-    for ($j = 0; $j -lt $d.Length; $j++) {
-        # Get the current element from the sub-array by its index
-            $c = $d[$j]                
-            $data = $data + [hashtable](ConvertFrom-StringData $c)                    
+    #todo : error on $delim not found
+    #todo : error on $keyPairStrings.length = 0
+    #todo : make pipable
+    #todo : return null on error
 
-        }
 
-                # Add the result to the array                
-            
-            $data
-            $resolved.Add($data)
-        }
-            # Create a custom object with properties from the data hashtable
-    
-    # Return the array of results
-    return  $data
+
+     "{"+(($keyPairStrings | % { '"{0}":"{1}"' -f @(($_ -split $delim) | %{ $_.trim()} ) })-join ', ' )+"}" | ConvertFrom-Json
 }
