@@ -1,45 +1,66 @@
-﻿
+﻿<#
+.SYNOPSIS
+Creates a temporary git repository and executes a script block in it.
+
+.DESCRIPTION
+This function creates a temporary git repository in a subdirectory of a temporary file and executes a script block in it. The function uses the invoke-git function to run git commands and the New-Guid cmdlet to generate a unique name for the subdirectory. The function also has an option to remove the subdirectory and its contents after executing the script block.
+
+.PARAMETER Script
+The script block to execute in the temporary git repository. If not specified, the function will return the path of the subdirectory.
+
+.PARAMETER RemoveAfter
+A switch parameter that indicates whether to remove the subdirectory and its contents after executing the script block. If not specified, the default value is false.
+#>
 function Invoke-GitTemp {
-  param(    
-    [Parameter(Mandatory = $false)] 
-    [scriptblock]$Script,
-    [switch]$RemoveAfter
+  param(
+      # Validate that the Script parameter is not null or empty and is a script block
+      [Parameter(Mandatory = $false)]
+      [ValidateNotNullOrEmpty()]
+      [ValidateScript({$_ -is [scriptblock]})]
+      [scriptblock]
+      $Script,
+
+      # Validate that the RemoveAfter parameter is a switch
+      [Parameter(Mandatory = $false)]
+      [ValidateScript({$_ -is [switch]})]
+      [switch]
+      $RemoveAfter
   )
-    $tempFile = New-TemporaryFile
 
-    #Use the Split-Path cmdlet to get the directory name of the temporary file. For example:
+  # Create a temporary file and get its directory name
+  $tempFile = New-TemporaryFile
+  $tempDir = Split-Path -Parent $tempFile
 
-    $tempDir = Split-Path -Parent $tempFile
+  # Create a subdirectory under the temporary directory with a unique name
+  $prefix = (New-Guid).Guid
+  $gitDir = New-Item -Path $tempDir -Name "$prefix.gitrepo" -ItemType Directory
 
+  # Change the current location to the subdirectory
+  Push-Location -Path $gitDir -ErrorAction Stop
 
-    #Use the New-Item cmdlet to create a subdirectory under the temporary directory. You can use any name you want for the subdirectory. For example:
-    $prefix = (New-Guid).Guid
-    $gitDir = New-Item -Path $tempDir -Name "$prefix.gitrepo" -ItemType Directory
+  # Initialize an empty git repository in the subdirectory
+  $q = invoke-git("init")
+  Write-Verbose $q
 
+  # Check if a script block is specified
+  if ($Script) {
+      # Execute the script block and store the result
+      $result = Invoke-Command -ScriptBlock $Script
+  }
+  else {
+      # Return the path of the subdirectory as output
+      $result = $gitDir
+  }
 
-    Push-Location -Path $gitDir -ErrorAction Stop
-
-    #Use the git init command to initialize an empty git repository in the subdirectory. For example:  
-    $q = invoke-git("init")
-    Write-Verbose $q
-
-    #Use the Set-Location cmdlet to change the current working directory to the subdirectory. For example:
-
-    if($Script)
-    {
-        # Execute the scriptblock here
-        return Invoke-Command -ScriptBlock $Script
-    }
-    else
-    {
-        return $gitDir
-    }
-        Pop-Location -ErrorAction Stop
+  # Return to the previous location
+  Pop-Location -ErrorAction Stop
 
   # Check if the flag is set to true
   if ($RemoveAfter) {
-    #You can now use the temporary initialized git repo directory for your tasks. When you are done, you can use the Remove-Item cmdlet to delete the subdirectory and its contents. For example:
-    Remove-Item -Path $gitDir -Recurse -Force
+      # Delete the subdirectory and its contents
+      Remove-Item -Path $gitDir -Recurse -Force
   }
-}
 
+  # Return the result as output
+  return $result
+}
