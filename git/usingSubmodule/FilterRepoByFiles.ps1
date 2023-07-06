@@ -1,26 +1,59 @@
-﻿# Get the list of file names from a text file
+﻿#Sure, I can try to do that. Here is one possible way to break up the script into smaller functions:
+
+<#
+.SYNOPSIS
+Clones a repository and filters it by file names into subfolders.
+
+.DESCRIPTION
+This script clones a repository and filters it by file names into subfolders, using the CloneWithReference and cherryPick-byPattern functions. The script also uses the git ls-files command to get the list of files in the repository.
+
+.PARAMETER Repo
+The path of the original repository.
+
+.PARAMETER FolderPath
+The path of the folder where the filtered repositories will be stored.
+
+.PARAMETER Files
+The list of file names to filter by.
+#>
+param (
+    [Parameter(Mandatory = $true)]
+    [string]
+    $Repo,
+
+    [Parameter(Mandatory = $true)]
+    [string]
+    $FolderPath,
+
+    [Parameter(Mandatory = $true)]
+    [string[]]
+    $Files
+)
+
+# Get the list of file names from a text file
 #$files = Get-Clipboard 
 #$files = $files | select -Unique
+
+# Load the ps1 files from a folder
 Get-ChildItem -path B:\GitPs1Module\* -Filter '*.ps1' | % { . $_.FullName }
 
-# Get the path of the original repository
-$repo = "B:\ps1"
-$repox = "file:///B:/ps1/.git"
-$folderPath = "B:\Filtered"
-
-cd $repo; git config --local uploadpack.allowFilter true
+# Set the uploadpack.allowFilter option for the original repository
+cd $Repo; git config --local uploadpack.allowFilter true
 
 # Create a folder to store the filtered repositories
-cd  $repo
+cd  $Repo
 
+# Get the list of files that match "git" in the original repository
 $files = git ls-files | ? { $_ -match "git" }
 
-cd $folderPath
+cd $FolderPath
+
 # Loop through each file name in the list
 foreach ($file in $files) {
     
     try {
-        $sub = Join-Path $folderPath $file
+        # Create a subfolder for each file name
+        $sub = Join-Path $FolderPath $file
 
         $subfolder = New-Item -Path $sub -ItemType Directory -Force -ErrorAction Stop 
     }
@@ -30,10 +63,14 @@ foreach ($file in $files) {
     }
 
     try {
-        git-status -path $repo
+        # Check the status of the original repository
+        git-status -path $Repo
         #git-status -path $repox            
-        $to = CloneWithReference -repo $repo -objectRepo $repo -path ($subfolder.FullName)
         
+        # Clone the original repository into the subfolder with a reference to itself
+        $to = CloneWithReference -repo $Repo -objectRepo $Repo -path ($subfolder.FullName)
+        
+        # Change the current directory to the cloned repository
         cd "$to\ps1" -PassThru
         
         Write-Output "---"
@@ -46,8 +83,7 @@ foreach ($file in $files) {
     # Change the current directory to the subfolder
 
     try {
-        #$tr = "$folderPath\$file\ps1"
-        #$f = "$file"
+        # Filter the cloned repository by cherry-picking commits that match the file name
         cherryPick-byPattern -pattern $file
         #FilterBySubdirectory -baseRepo $repo -targetRepo $tr -toFilterRepo $tr -toFilterBy $f -branchName "master"      
     }
@@ -55,24 +91,7 @@ foreach ($file in $files) {
         Write-Error "Failed to Filter for $file"
         Write-Error $_
     }
-    #
-    #git submodule update --init --recursive 
-
-
-    #git clone --reference $repo --filter=combine:blob:none,sparse:$file, $repox
-    #filterByName ($file)
-
-    # Filter the copied repository to only contain the current file name using git filter-branch
-    #try {
-        #git filter-branch --prune-empty --subdirectory-filter $file HEAD
-    #}
-    #catch {
-        #Write-Error "Failed to filter repository by $file"
-        #continue # Skip to the next file
-    #}
-
-    # Change the current directory back to the original repository
- #   Set-Location $repo
+    
 }
 
 
