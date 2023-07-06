@@ -1,36 +1,153 @@
-﻿# Get the file name and the branch name from the arguments
-$fileName = $args[0]
-$branchName = $args[1]
+﻿# Define a function that gets the list of commits that modified a file
+function Get-Commits {
+    param (
+        # The file name to search for
+        [Parameter(Mandatory=$true)]
+        [string]$FileName
+    )
+
+    # Validate the file name
+    if (!(Test-Path $FileName)) {
+        Write-Error "File $FileName does not exist"
+        return
+    }
+
+    # Call git log and return the commit hashes as an array
+    return git log --pretty=format:"%H" -- $FileName
+}
+
+# Define a function that creates a new branch with a given name
+function New-Branch {
+    param (
+        # The branch name to create
+        [Parameter(Mandatory=$true)]
+        [string]$BranchName
+    )
+
+    # Validate the branch name
+    if (git branch --list $BranchName) {
+        Write-Error "Branch $BranchName already exists"
+        return
+    }
+
+    # Call git checkout with the -b option
+    git checkout -b $BranchName
+}
+
+# Define a function that creates a patch file for a given commit
+function New-Patch {
+    param (
+        # The commit hash to create a patch for
+        [Parameter(Mandatory=$true)]
+        [string]$CommitHash
+    )
+
+    # Validate the commit hash
+    if (!(git cat-file -e $CommitHash)) {
+        Write-Error "Commit $CommitHash does not exist"
+        return
+    }
+
+    # Create a patch file with the commit hash as the name
+    $PatchFile = "$CommitHash.patch"
+    git format-patch -1 $CommitHash --stdout > $PatchFile
+
+    # Return the patch file name
+    return $PatchFile
+}
+
+# Define a function that applies a patch file to the current branch
+function Apply-Patch {
+    param (
+        # The patch file name to apply
+        [Parameter(Mandatory=$true)]
+        [string]$PatchFile
+    )
+
+    # Validate the patch file name
+    if (!(Test-Path $PatchFile)) {
+        Write-Error "Patch file $PatchFile does not exist"
+        return
+    }
+
+    # Call git apply with the patch file name
+    git apply $PatchFile
+
+    # Return the status code of the git command
+    return $?
+}
+
+# Define a function that adds a file to the staging area
+function Add-File {
+    param (
+        # The file name to add
+        [Parameter(Mandatory=$true)]
+        [string]$FileName
+    )
+
+    # Validate the file name
+    if (!(Test-Path $FileName)) {
+        Write-Error "File $FileName does not exist"
+        return
+    }
+
+    # Call git add with the file name
+    git add $FileName
+
+    # Return the status code of the git command
+    return $?
+}
+
+# Define a function that commits with a given message
+function Commit-Message {
+    param (
+        # The message to commit with
+        [Parameter(Mandatory=$true)]
+        [string]$Message
+    )
+
+    # Call git commit with the message as an argument
+    git commit -m $Message
+
+    # Return the status code of the git command
+    return $?
+}
+
+# Get the file name and the branch name from the arguments
+$FileName = $args[0]
+$BranchName = $args[1]
 
 # Check if the arguments are valid
-if (!$fileName -or !$branchName) {
+if (!$FileName -or !$BranchName) {
     Write-Host "Usage: .\script.ps1 <file name> <branch name>"
     exit
 }
 
-# Get the list of commits that modified the file
-$commits = git log --pretty=format:"%H" -- $fileName
+# Get the list of commits that modified the file using the Get-Commits function
+$Commits = Get-Commits -FileName $FileName
 
-# Create a new branch with the given name
-git checkout -b $branchName
+# Create a new branch with the given name using the New-Branch function
+New-Branch -BranchName $BranchName
 
-# Loop through the commits and create a patch for each one
-foreach ($commit in $commits) {
-    # Create a patch file with the commit hash as the name
-    $patchFile = "$commit.patch"
-    git format-patch -1 $commit --stdout > $patchFile
+# Loop through the commits and create and apply a patch for each one using the New-Patch and Apply-Patch functions 
+foreach ($Commit in $Commits) {
+    
+     # Create a patch file with the commit hash as the name using the New-Patch function 
+     $PatchFile = New-Patch -CommitHash $Commit
 
-    # Apply the patch to the new branch
-    git apply $patchFile
+     # Apply the patch to the new branch using the Apply-Patch function 
+     if (Apply-Patch -PatchFile $PatchFile) {
 
-    # Add the file to the staging area
-    git add $fileName
+         # Add the file to the staging area using the Add-File function 
+         if (Add-File -FileName $FileName) {
 
-    # Commit with the commit hash as the message
-    git commit -m $commit
+             # Commit with the commit hash as the message using the Commit-Message function 
+             Commit-Message -Message $Commit
 
-    # Delete the patch file
-    Remove-Item $patchFile
+             # Delete the patch file 
+             Remove-Item $PatchFile
+         }
+     }
 }
 
 # Show the log of the new branch
