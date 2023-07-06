@@ -34,7 +34,7 @@ function New-Branch {
     git checkout -b $BranchName
 }
 
-# Define a function that creates a patch file for a given commit
+# Define a function that creates a patch file for a given commit and returns the patch file name and the original commit message
 function New-Patch {
     param (
         # The commit hash to create a patch for
@@ -52,8 +52,14 @@ function New-Patch {
     $PatchFile = "$CommitHash.patch"
     git format-patch -1 $CommitHash --stdout > $PatchFile
 
-    # Return the patch file name
-    return $PatchFile
+    # Get the original commit message using git show with the --pretty option
+    $CommitMessage = git show -s --pretty=%B $CommitHash
+
+    # Return the patch file name and the original commit message as an object
+    return [PSCustomObject]@{
+        PatchFile = $PatchFile
+        CommitMessage = $CommitMessage
+    }
 }
 
 # Define a function that applies a patch file to the current branch
@@ -98,57 +104,67 @@ function Add-File {
     return $?
 }
 
-# Define a function that commits with a given message
+# Define a function that commits with a given message and an optional prefix 
 function Commit-Message {
     param (
-        # The message to commit with
+        # The message to commit with 
         [Parameter(Mandatory=$true)]
-        [string]$Message
-    )
+        [string]$Message,
 
-    # Call git commit with the message as an argument
-    git commit -m $Message
+        # The optional prefix to add before the message 
+        [Parameter(Mandatory=$false)]
+        [string]$Prefix = ""
+        
+     )
 
-    # Return the status code of the git command
-    return $?
+     # If there is a prefix, add a space after it 
+     if ($Prefix) {
+         $Prefix += " "
+     }
+
+     # Call git commit with the prefix and the message as an argument 
+     git commit -m "$Prefix$Message"
+
+     # Return the status code of the git command 
+     return $? 
 }
 
-# Get the file name and the branch name from the arguments
-$FileName = $args[0]
+# Get the file name and the branch name from the arguments 
+$FileName = $args[0] 
 $BranchName = $args[1]
 
-# Check if the arguments are valid
-if (!$FileName -or !$BranchName) {
-    Write-Host "Usage: .\script.ps1 <file name> <branch name>"
-    exit
+# Check if the arguments are valid 
+if (!$FileName -or !$BranchName) { 
+     Write-Host "Usage: .\script.ps1 <file name> <branch name>" 
+     exit 
 }
 
-# Get the list of commits that modified the file using the Get-Commits function
+# Get the list of commits that modified the file using the Get-Commits function 
 $Commits = Get-Commits -FileName $FileName
 
-# Create a new branch with the given name using the New-Branch function
+# Create a new branch with the given name using the New-Branch function 
 New-Branch -BranchName $BranchName
 
-# Loop through the commits and create and apply a patch for each one using the New-Patch and Apply-Patch functions 
+# Loop through the commits and create and apply a patch for each one using the New-Patch and Apply-Patch functions  
 foreach ($Commit in $Commits) {
     
-     # Create a patch file with the commit hash as the name using the New-Patch function 
-     $PatchFile = New-Patch -CommitHash $Commit
+     # Create a patch file with the commit hash as the name and get the original commit message using the New-Patch function  
+     $Patch = New-Patch -CommitHash $Commit
 
-     # Apply the patch to the new branch using the Apply-Patch function 
-     if (Apply-Patch -PatchFile $PatchFile) {
+     # Apply the patch to the new branch using the Apply-Patch function  
+     if (Apply-Patch -PatchFile $Patch.PatchFile) {
 
-         # Add the file to the staging area using the Add-File function 
+         # Add the file to the staging area using the Add-File function  
          if (Add-File -FileName $FileName) {
 
-             # Commit with the commit hash as the message using the Commit-Message function 
-             Commit-Message -Message $Commit
+             # Commit with the commit hash and the original commit message as the message using the Commit-Message function  
+             Commit-Message -Message $Patch.CommitMessage -Prefix $Commit
 
-             # Delete the patch file 
-             Remove-Item $PatchFile
+             # Delete the patch file  
+             Remove-Item $Patch.PatchFile
          }
      }
 }
 
-# Show the log of the new branch
+# Show the log of the new branch 
 git log --oneline --graph --decorate --all
