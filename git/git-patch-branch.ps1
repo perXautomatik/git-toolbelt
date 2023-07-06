@@ -3,7 +3,11 @@ function Get-Commits {
     param (
         # The file name to search for
         [Parameter(Mandatory=$true)]
-        [string]$FileName
+        [string]$FileName,
+
+        # The optional branch name to search in
+        [Parameter(Mandatory=$false)]
+        [string]$BranchName
     )
 
     # Validate the file name
@@ -12,8 +16,13 @@ function Get-Commits {
         return
     }
 
+    # If there is a branch name, add it to the git log command
+    if ($BranchName) {
+        $BranchName = "$BranchName --"
+    }
+
     # Call git log and return the commit hashes as an array
-    return git log --pretty=format:"%H" -- $FileName
+    return git log --pretty=format:"%H" --all $BranchName $FileName
 }
 
 # Define a function that creates a new branch with a given name
@@ -106,14 +115,14 @@ function Add-File {
 
 # Define a function that commits with a given message and an optional prefix 
 function Commit-Message {
-    param (
-        # The message to commit with 
-        [Parameter(Mandatory=$true)]
-        [string]$Message,
+     param (
+         # The message to commit with 
+         [Parameter(Mandatory=$true)]
+         [string]$Message,
 
-        # The optional prefix to add before the message 
-        [Parameter(Mandatory=$false)]
-        [string]$Prefix = ""
+         # The optional prefix to add before the message 
+         [Parameter(Mandatory=$false)]
+         [string]$Prefix = ""
         
      )
 
@@ -134,13 +143,13 @@ $FileName = $args[0]
 $BranchName = $args[1]
 
 # Check if the arguments are valid 
-if (!$FileName -or !$BranchName) { 
-     Write-Host "Usage: .\script.ps1 <file name> <branch name>" 
+if (!$FileName) { 
+     Write-Host "Usage: .\script.ps1 <file name> [<branch name>]" 
      exit 
 }
 
 # Get the list of commits that modified the file using the Get-Commits function 
-$Commits = Get-Commits -FileName $FileName
+$Commits = Get-Commits -FileName $FileName -BranchName $BranchName
 
 # Create a new branch with the given name using the New-Branch function 
 New-Branch -BranchName $BranchName
