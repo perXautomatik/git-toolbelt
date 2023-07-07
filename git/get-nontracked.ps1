@@ -88,7 +88,13 @@ function Get-NonTrackedPaths {
 	    Write-Verbose $_.Exception.Message
 
 	    # Remove the error prone repo from the queue
-	    $PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
+$d = ([System.Collections.ArrayList]@($PathQueue | Where-Object {$_ -ne $OtherPath}))
+	    $PathQueue = New-Object System.Collections.Queue
+
+        foreach ($Path in $d) {
+            $PathQueue.Enqueue($Path)
+          }
+
 
 	    # Add a status property to the output object of the other path with the error message
 	    foreach ($OutputObject in $OutputObjects) {
@@ -107,9 +113,9 @@ function Get-NonTrackedPaths {
 
       # If the flag is still false, add the current path to the non-tracked paths array and set its status as untracked
       if (-not $IsTracked) {
-	$NonTrackedPaths += $Path
+	        $NonTrackedPaths += $Path
 
-	Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name Status -Value "Untracked"
+	        Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name Status -Value "Untracked" -ErrorAction SilentlyContinue
       }
 
     }
@@ -124,7 +130,6 @@ function Get-NonTrackedPaths {
   }
   $OutputObjects
 }
-
 # Define a function to run git commands and check the exit code
 <#
 .SYNOPSIS
@@ -133,21 +138,28 @@ Runs a git command and checks the exit code.
 .DESCRIPTION
 This function runs a git command using Invoke-Expression and captures the output.
 It returns the output to the host and prints a verbose message if the exit code is not zero.
+It also prints the output to verbose if the verbose flag is set.
 
 .PARAMETER Command
 The git command to run.
 
-.EXAMPLE
-Invoke-Git -Command "status --porcelain --untracked-files=no"
+.PARAMETER Verbose
+The flag to indicate whether to print the output to verbose or not.
 
-This example runs the git status command with some options and returns the output.
+.EXAMPLE
+Invoke-Git -Command "status --porcelain --untracked-files=no" -Verbose $true
+
+This example runs the git status command with some options and returns and prints the output to verbose.
 #>
 function Invoke-Git {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
-    [string]$Command # The git command to run
+    [string]$Command, # The git command to run
+
+    [Parameter(Mandatory=$false)]
+    [bool]$Verbose # The flag to indicate whether to print the output to verbose or not
   )
   # Run the command and capture the output
   $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
@@ -156,6 +168,10 @@ function Invoke-Git {
   # Check the exit code and print a verbose message if not zero
   if ($LASTEXITCODE -ne 0) {
     Write-Verbose "Git command failed: git $Command"
+  }
+  # Print the output to verbose if the flag is set
+  if ($Verbose) {
+    Write-Verbose $output
   }
 }
 
@@ -230,7 +246,7 @@ function Test-GitTracking {
 
   # Invoke git status command using the Invoke-Git function and capture the output
   try {
-    $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
+    $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no" -verbos
   }
   catch {
     # Print the error as a verbose message and rethrow it
