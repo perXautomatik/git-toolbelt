@@ -1,4 +1,19 @@
-﻿# Define a function that takes a list of paths as input
+﻿# Define a function to run git commands and check the exit code
+function Invoke-Git {
+  param(
+    [string]$Command # The git command to run
+  )
+  # Run the command and capture the output
+  $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
+  # return the output to the host
+  $output
+  # Check the exit code and throw an exception if not zero
+  if ($LASTEXITCODE -ne 0) {
+    throw "Git command failed: git $Command"
+  }
+}
+
+# Define a function that takes a list of paths as input
 function Get-NonTrackedPaths {
   param (
     [Parameter(Mandatory=$true)]
@@ -35,8 +50,8 @@ function Get-NonTrackedPaths {
                 # Change the current location to the other path
                 Push-Location -Path $OtherPath
 
-                # Invoke git status command and capture the output
-                $GitStatus = git status --porcelain --untracked-files=no
+                # Invoke git status command using the Invoke-Git function and capture the output
+                $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
 
                 # Restore the original location
                 Pop-Location
