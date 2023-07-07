@@ -1,0 +1,1 @@
+﻿cmd /C takeown /F "C:\Users" /A /R /D Y
