@@ -3,21 +3,6 @@ function Invoke-Git {
   param(
     [string]$Command # The git command to run
   )
-  $env:GIT_REDIRECT_STDERR = "2>&1"
-  # Run the command and capture the output
-  $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
-  # return the output to the host
-  $output
-  # Check the exit code and print a verbose message if not zero
-  if ($LASTEXITCODE -ne 0) {
-    Write-Verbose "Git command failed: git $Command"
-  }
-}
-# Define a function to run git commands and check the exit code
-function Invoke-Git {
-  param(
-    [string]$Command # The git command to run
-  )
   # Run the command and capture the output
   $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
   # return the output to the host
@@ -64,81 +49,84 @@ function Get-NonTrackedPaths {
       # Check if the path contains a .git folder
       if (Test-Path -Path "$Path\.git") {
 
-        # Assume the path is not tracked by any other path
-        $IsTracked = $false
+	# Assume the path is not tracked by any other path
+	$IsTracked = $false
 
-        # Loop through the remaining paths in the queue with a progress bar
-        $j = 0
-        foreach ($OtherPath in $PathQueue) {
+	# Filter the remaining paths in the queue to only include those that are relative to the current path or vice versa
+	$FilteredPaths = @($PathQueue | Where-Object {($_.StartsWith($Path) -or $Path.StartsWith($_))})
 
-          # Update the progress bar for the inner loop
-          $j++
-          Write-Progress -Activity "Checking other paths" -Status "Processing other path $j of $($PathQueue.Count)" -PercentComplete ($j / $PathQueue.Count * 100) -Id 1
+	# Loop through the filtered paths with a progress bar
+	$j = 0
+	foreach ($OtherPath in $FilteredPaths) {
 
-          # Check if the other path is a valid directory
-          if (Test-Path -Path $OtherPath -PathType Container) {
+	  # Update the progress bar for the inner loop
+	  $j++
+	  Write-Progress -Activity "Checking other paths" -Status "Processing other path $j of $($FilteredPaths.Count)" -PercentComplete ($j / $FilteredPaths.Count * 100) -Id 1
 
-            # Check if the other path contains a .git folder
-            if (Test-Path -Path "$OtherPath\.git") {
+	  # Check if the other path is a valid directory
+	  if (Test-Path -Path $OtherPath -PathType Container) {
 
-              # Change the current location to the other path
-              Push-Location -Path $OtherPath
+	    # Check if the other path contains a .git folder
+	    if (Test-Path -Path "$OtherPath\.git") {
 
-              # Invoke git status command using the Invoke-Git function and capture the output
-              try {
-                $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
-              }
-              catch {
-                # Print the error as a verbose message and continue
-                Write-Verbose $_.Exception.Message
+	      # Change the current location to the other path
+	      Push-Location -Path $OtherPath
 
-                # Remove the error prone repo from the queue
-                $PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
+	      # Invoke git status command using the Invoke-Git function and capture the output
+	      try {
+		$GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
+	      }
+	      catch {
+		# Print the error as a verbose message and continue
+		Write-Verbose $_.Exception.Message
 
-                # Add an error message property to the output object of the other path
-                foreach ($OutputObject in $OutputObjects) {
-                  if ($OutputObject.Path -eq $OtherPath) {
-                    Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value $_.Exception.Message
-                  }
-                }
+		# Remove the error prone repo from the queue
+		$PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
 
-                continue
-              }
+		# Add an error message property to the output object of the other path
+		foreach ($OutputObject in $OutputObjects) {
+		  if ($OutputObject.Path -eq $OtherPath) {
+		    Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value $_.Exception.Message
+		  }
+		}
 
-              # Restore the original location
-              Pop-Location
+		continue
+	      }
 
-              # Check if the output contains the current path as a normal part of repository or as a submodule
-              if ($GitStatus -match [regex]::Escape($Path)) {
+	      # Restore the original location
+	      Pop-Location
 
-                # Set the flag to indicate the current path is tracked by the other path
-                $IsTracked = $true
+	      # Check if the output contains the current path as a normal part of repository or as a submodule
+	      if ($GitStatus -match [regex]::Escape($Path)) {
 
-                # Add a tracking status property to the output object of the current path
-                Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Tracked by $($OtherPath)"
+		# Set the flag to indicate the current path is tracked by the other path
+		$IsTracked = $true
 
-                # Break the inner loop
-                break
+		# Add a tracking status property to the output object of the current path
+		Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Tracked by $($OtherPath)"
 
-              }
+		# Break the inner loop
+		break
 
-            }
+	      }
 
-          }
+	    }
 
-        }
+	  }
 
-        # If the flag is still false, add the current path to the non-tracked paths array and set its tracking status as untracked
-        if (-not $IsTracked) {
-          $NonTrackedPaths += $Path
+	}
 
-          Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Untracked"
-        }
+	# If the flag is still false, add the current path to the non-tracked paths array and set its tracking status as untracked
+	if (-not $IsTracked) {
+	  $NonTrackedPaths += $Path
+
+	  Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Untracked"
+	}
 
       }
       else {
-        # Add an error message property to the output object of the current path
-        Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value "No .git folder found"
+	# Add an error message property to the output object of the current path
+	Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value "No .git folder found"
       }
 
     }
@@ -163,4 +151,4 @@ $Paths = Get-Clipboard | % { $_ | Split-Path -Parent }
 
 $NonTrackedPaths = Get-NonTrackedPaths -Paths @($Paths)
 
-$NonTrackedPaths
+$NonTrackedPaths | format-table
