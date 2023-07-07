@@ -1,12 +1,13 @@
-﻿# Define a function that takes a list of paths as input and returns an array of objects with their error message or tracking status
+﻿
+# Define a function that takes a list of paths as input and returns an array of objects with their status (error message or tracking status)
 <#
 .SYNOPSIS
-Takes a list of paths as input and returns an array of objects with their error message or tracking status.
+Takes a list of paths as input and returns an array of objects with their status (error message or tracking status).
 
 .DESCRIPTION
 This function takes a list of paths as input and checks if they are valid git repositories.
 It also checks if they are tracked by any other path in the list as a normal part of repository or as a submodule using the Test-GitTracking function.
-It returns an array of objects with the path, error message (if any) and tracking status (if any) as properties.
+It returns an array of objects with the path and status (error message or tracking status) as properties.
 
 .PARAMETER Paths
 The list of paths to check.
@@ -14,7 +15,7 @@ The list of paths to check.
 .EXAMPLE
 Get-NonTrackedPaths -Paths @("C:\path1", "C:\path2", "C:\path3", "C:\path4")
 
-This example takes a list of four paths and returns an array of objects with their error message or tracking status.
+This example takes a list of four paths and returns an array of objects with their status (error message or tracking status).
 #>
 function Get-NonTrackedPaths {
   [CmdletBinding()]
@@ -60,61 +61,61 @@ function Get-NonTrackedPaths {
       $j = 0
       foreach ($OtherPath in $FilteredPaths) {
 
-        # Update the progress bar for the inner loop
-        $j++
-        Write-Progress -Activity "Checking other paths" -Status "Processing other path $j of $($FilteredPaths.Count)" -PercentComplete ($j / $FilteredPaths.Count * 100) -Id 1
+	# Update the progress bar for the inner loop
+	$j++
+	Write-Progress -Activity "Checking other paths" -Status "Processing other path $j of $($FilteredPaths.Count)" -PercentComplete ($j / $FilteredPaths.Count * 100) -Id 1
 
-        # Check if the other path is a valid git repository using the Test-GitRepository function
-        if (Test-GitRepository -Path $OtherPath) {
+	# Check if the other path is a valid git repository using the Test-GitRepository function
+	if (Test-GitRepository -Path $OtherPath) {
 
-          # Check if the current path is tracked by the other path using the Test-GitTracking function
-          try {
-            if (Test-GitTracking -Path $Path -OtherPath $OtherPath) {
+	  # Check if the current path is tracked by the other path using the Test-GitTracking function
+	  try {
+	    if (Test-GitTracking -Path $Path -OtherPath $OtherPath) {
 
-              # Set the flag to indicate the current path is tracked by the other path
-              $IsTracked = $true
+	      # Set the flag to indicate the current path is tracked by the other path
+	      $IsTracked = $true
 
-              # Add a tracking status property to the output object of the current path
-              Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Tracked by $($OtherPath)"
+	      # Add a status property to the output object of the current path with the tracking status
+	      Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name Status -Value "Tracked by $($OtherPath)"
 
-              # Break the inner loop
-              break
+	      # Break the inner loop
+	      break
 
-            }
-          }
-          catch {
-            # Print the error as a verbose message and continue
-            Write-Verbose $_.Exception.Message
+	    }
+	  }
+	  catch {
+	    # Print the error as a verbose message and continue
+	    Write-Verbose $_.Exception.Message
 
-            # Remove the error prone repo from the queue
-            $PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
+	    # Remove the error prone repo from the queue
+	    $PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
 
-            # Add an error message property to the output object of the other path
-            foreach ($OutputObject in $OutputObjects) {
-              if ($OutputObject.Path -eq $OtherPath) {
-                Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value $_.Exception.Message
-              }
-            }
+	    # Add a status property to the output object of the other path with the error message
+	    foreach ($OutputObject in $OutputObjects) {
+	      if ($OutputObject.Path -eq $OtherPath) {
+		Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name Status -Value $_.Exception.Message
+	      }
+	    }
 
-            continue
+	    continue
 
-          }
+	  }
 
-        }
+	}
 
       }
 
-      # If the flag is still false, add the current path to the non-tracked paths array and set its tracking status as untracked
+      # If the flag is still false, add the current path to the non-tracked paths array and set its status as untracked
       if (-not $IsTracked) {
-        $NonTrackedPaths += $Path
+	$NonTrackedPaths += $Path
 
-        Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Untracked"
+	Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name Status -Value "Untracked"
       }
 
     }
     else {
-      # Add an error message property to the output object of the current path
-      Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value "Invalid git repository"
+      # Add a status property to the output object of the current path with an error message
+      Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name Status -Value "Invalid git repository"
     }
 
     # Add the output object to the output objects array
@@ -244,12 +245,11 @@ function Test-GitTracking {
   if ($GitStatus -match [regex]::Escape($Path)) {
     return $true
   }
-  
+
   return $false
-  
+
 }
 
-  # Return the output
 # Example usage: pass a list of paths as input and get the non-tracked paths as output
 
 $Paths = Get-Clipboard | % { $_ | Split-Path -Parent }
