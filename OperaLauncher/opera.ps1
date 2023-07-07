@@ -1,9 +1,9 @@
-﻿$a = 'a_tur'
-$profileFolder = 'C:\Users\chris\AppData\Roaming\Opera Software\Opera GX Stable\_side_profiles'
+﻿$a = 'a_ana'
+$profileFolder = 'C:\Users\användaren\AppData\Roaming\Opera Software\Opera GX Stable\_side_profiles'
 $rename = $true
 $RenameAfter = !($a -match 'a_') -or $rename
 $cloneIfempty = $true
-$launcher = "Z:\Program Files\Opera GX\launcher.exe";
+$launcher = "C:\Program Files\Opera GX\launcher.exe";
 
 function RenameAsCopyMoveTask{
 
