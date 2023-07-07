@@ -23,16 +23,19 @@ function Get-NonTrackedPaths {
   # Initialize an empty array to store the non-tracked paths
   $NonTrackedPaths = @()
 
-  # Initialize an empty array to store the valid repository paths
-  $ValidRepoPaths = @()
+  # Initialize a queue to store the paths to be checked
+  $PathQueue = New-Object System.Collections.Queue
 
-  # Loop through each path in the input list with a progress bar
-  $i = 0
+  # Enqueue all the paths from the input list
   foreach ($Path in $Paths) {
+    $PathQueue.Enqueue($Path)
+  }
 
-    # Update the progress bar for the outer loop
-    $i++
-    Write-Progress -Activity "Checking paths" -Status "Processing path $i of $($Paths.Count)" -PercentComplete ($i / $Paths.Count * 100)
+  # Loop through the queue until it is empty
+  while ($PathQueue.Count -gt 0) {
+
+    # Dequeue the first path from the queue
+    $Path = $PathQueue.Dequeue()
 
     # Check if the path is a valid directory
     if (Test-Path -Path $Path -PathType Container) {
@@ -40,87 +43,67 @@ function Get-NonTrackedPaths {
       # Check if the path contains a .git folder
       if (Test-Path -Path "$Path\.git") {
 
-        # Change the current location to the path
-        Push-Location -Path $Path
+        # Assume the path is not tracked by any other path
+        $IsTracked = $false
 
-        # Invoke git status command using the Invoke-Git function and capture the output
-        try {
-          $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
-        }
-        catch {
-          # Print the error as a verbose message and continue
-          Write-Verbose $_.Exception.Message
-          continue
-        }
+        # Loop through the remaining paths in the queue with a progress bar
+        $j = 0
+        foreach ($OtherPath in $PathQueue) {
 
-        # Restore the original location
-        Pop-Location
+          # Update the progress bar for the inner loop
+          $j++
+          Write-Progress -Activity "Checking other paths" -Status "Processing other path $j of $($PathQueue.Count)" -PercentComplete ($j / $PathQueue.Count * 100) -Id 1
 
-        # Add the path to the valid repository paths array
-        $ValidRepoPaths += $Path
+          # Check if the other path is a valid directory
+          if (Test-Path -Path $OtherPath -PathType Container) {
 
-      }
+            # Check if the other path contains a .git folder
+            if (Test-Path -Path "$OtherPath\.git") {
 
-    }
+              # Change the current location to the other path
+              Push-Location -Path $OtherPath
 
-  }
+              # Invoke git status command using the Invoke-Git function and capture the output
+              try {
+                $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
+              }
+              catch {
+                # Print the error as a verbose message and continue
+                Write-Verbose $_.Exception.Message
 
-  # Loop through each valid repository path in the input list with a progress bar
-  $i = 0
-  foreach ($Path in $ValidRepoPaths) {
+                # Remove the error prone repo from the queue
+                $PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
 
-    # Update the progress bar for the outer loop
-    $i++
-    Write-Progress -Activity "Checking paths" -Status "Processing path $i of $($ValidRepoPaths.Count)" -PercentComplete ($i / $ValidRepoPaths.Count * 100)
+                continue
+              }
 
-    # Assume the path is not tracked by any other path
-    $IsTracked = $false
+              # Restore the original location
+              Pop-Location
 
-    # Loop through the other valid repository paths in the input list with a progress bar
-    $j = 0
-    foreach ($OtherPath in $ValidRepoPaths) {
+              # Check if the output contains the current path as a normal part of repository or as a submodule
+              if ($GitStatus -match [regex]::Escape($Path)) {
 
-      # Update the progress bar for the inner loop
-      $j++
-      Write-Progress -Activity "Checking other paths" -Status "Processing other path $j of $($ValidRepoPaths.Count)" -PercentComplete ($j / $ValidRepoPaths.Count * 100) -Id 1
+                # Set the flag to indicate the current path is tracked by the other path
+                $IsTracked = $true
 
-      # Skip the current path
-      if ($OtherPath -ne $Path) {
+                # Break the inner loop
+                break
 
-        # Change the current location to the other path
-        Push-Location -Path $OtherPath
+              }
 
-        # Invoke git status command using the Invoke-Git function and capture the output
-        try {
-          $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
-        }
-        catch {
-          # Print the error as a verbose message and continue
-          Write-Verbose $_.Exception.Message
-          continue
+            }
+
+          }
+
         }
 
-        # Restore the original location
-        Pop-Location
-
-        # Check if the output contains the current path as a normal part of repository or as a submodule
-        if ($GitStatus -match [regex]::Escape($Path)) {
-
-          # Set the flag to indicate the current path is tracked by the other path
-          $IsTracked = $true
-
-          # Break the inner loop
-          break
-
+        # If the flag is still false, add the current path to the non-tracked paths array
+        if (-not $IsTracked) {
+          $NonTrackedPaths += $Path
         }
 
       }
 
-    }
-
-    # If the flag is still false, add the current path to the non-tracked paths array
-    if (-not $IsTracked) {
-      $NonTrackedPaths += $Path
     }
 
   }
