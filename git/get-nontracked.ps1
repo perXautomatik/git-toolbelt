@@ -99,6 +99,9 @@ function Get-NonTrackedPaths {
 }
 
 # Example usage: pass a list of paths as input and get the non-tracked paths as output
-$Paths = @("C:\path1", "C:\path2", "C:\path3", "C:\path4")
-$NonTrackedPaths = Get-NonTrackedPaths -Paths @(get-clipboard)
+
+$Paths = Get-Clipboard | % { $_ | Split-Path -Parent }
+
+$NonTrackedPaths = Get-NonTrackedPaths -Paths @($Paths)
+
 $NonTrackedPaths
