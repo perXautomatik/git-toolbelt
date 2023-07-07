@@ -3,6 +3,7 @@ function Invoke-Git {
   param(
     [string]$Command # The git command to run
   )
+  $env:GIT_REDIRECT_STDERR = "2>&1"
   # Run the command and capture the output
   $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
   # return the output to the host
