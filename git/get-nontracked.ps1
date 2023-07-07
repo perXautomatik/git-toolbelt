@@ -13,6 +13,7 @@ function Invoke-Git {
     Write-Verbose "Git command failed: git $Command"
   }
 }
+
 # Define a function that takes a list of paths as input
 function Get-NonTrackedPaths {
   param (
@@ -26,8 +27,8 @@ function Get-NonTrackedPaths {
   # Initialize a queue to store the paths to be checked
   $PathQueue = New-Object System.Collections.Queue
 
-  # Enqueue all the paths from the input list
-  foreach ($Path in $Paths) {
+  # Sort the paths alphabetically and enqueue them
+  foreach ($Path in $Paths | Sort-Object) {
     $PathQueue.Enqueue($Path)
   }
 
