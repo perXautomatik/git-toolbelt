@@ -13,6 +13,20 @@ function Invoke-Git {
     Write-Verbose "Git command failed: git $Command"
   }
 }
+# Define a function to run git commands and check the exit code
+function Invoke-Git {
+  param(
+    [string]$Command # The git command to run
+  )
+  # Run the command and capture the output
+  $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
+  # return the output to the host
+  $output
+  # Check the exit code and print a verbose message if not zero
+  if ($LASTEXITCODE -ne 0) {
+    Write-Verbose "Git command failed: git $Command"
+  }
+}
 
 # Define a function that takes a list of paths as input
 function Get-NonTrackedPaths {
@@ -32,11 +46,17 @@ function Get-NonTrackedPaths {
     $PathQueue.Enqueue($Path)
   }
 
+  # Initialize an empty array to store the output objects
+  $OutputObjects = @()
+
   # Loop through the queue until it is empty
   while ($PathQueue.Count -gt 0) {
 
     # Dequeue the first path from the queue
     $Path = $PathQueue.Dequeue()
+
+    # Create an output object with the path as a property
+    $OutputObject = New-Object PSObject -Property @{Path = $Path}
 
     # Check if the path is a valid directory
     if (Test-Path -Path $Path -PathType Container) {
@@ -75,6 +95,13 @@ function Get-NonTrackedPaths {
                 # Remove the error prone repo from the queue
                 $PathQueue = New-Object System.Collections.Queue ($PathQueue | Where-Object {$_ -ne $OtherPath})
 
+                # Add an error message property to the output object of the other path
+                foreach ($OutputObject in $OutputObjects) {
+                  if ($OutputObject.Path -eq $OtherPath) {
+                    Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value $_.Exception.Message
+                  }
+                }
+
                 continue
               }
 
@@ -87,6 +114,9 @@ function Get-NonTrackedPaths {
                 # Set the flag to indicate the current path is tracked by the other path
                 $IsTracked = $true
 
+                # Add a tracking status property to the output object of the current path
+                Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Tracked by $($OtherPath)"
+
                 # Break the inner loop
                 break
 
@@ -98,22 +128,34 @@ function Get-NonTrackedPaths {
 
         }
 
-        # If the flag is still false, add the current path to the non-tracked paths array
+        # If the flag is still false, add the current path to the non-tracked paths array and set its tracking status as untracked
         if (-not $IsTracked) {
           $NonTrackedPaths += $Path
+
+          Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name TrackingStatus -Value "Untracked"
         }
 
       }
+      else {
+        # Add an error message property to the output object of the current path
+        Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value "No .git folder found"
+      }
 
     }
+    else {
+      # Add an error message property to the output object of the current path
+      Add-Member -InputObject $OutputObject -MemberType NoteProperty -Name ErrorMessage -Value "Invalid directory"
+    }
+
+    # Add the output object to the output objects array
+    $OutputObjects += $OutputObject
 
   }
 
-  # Return the non-tracked paths array
-  return $NonTrackedPaths
+  # Return the output objects array as a table
+  return $OutputObjects | Format-Table -AutoSize
 
 }
-
 
 # Example usage: pass a list of paths as input and get the non-tracked paths as output
 
