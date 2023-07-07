@@ -7,9 +7,9 @@ function Invoke-Git {
   $output = Invoke-Expression -Command "git $Command" -ErrorAction Stop
   # return the output to the host
   $output
-  # Check the exit code and throw an exception if not zero
+  # Check the exit code and print a verbose message if not zero
   if ($LASTEXITCODE -ne 0) {
-    throw "Git command failed: git $Command"
+    Write-Verbose "Git command failed: git $Command"
   }
 }
 
@@ -51,7 +51,14 @@ function Get-NonTrackedPaths {
                 Push-Location -Path $OtherPath
 
                 # Invoke git status command using the Invoke-Git function and capture the output
-                $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
+                try {
+                  $GitStatus = Invoke-Git -Command "status --porcelain --untracked-files=no"
+                }
+                catch {
+                  # Print the error as a verbose message and continue
+                  Write-Verbose $_.Exception.Message
+                  continue
+                }
 
                 # Restore the original location
                 Pop-Location
