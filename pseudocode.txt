@@ -1,0 +1,110 @@
+
+define type
+    submodule-entry inherents ini,git
+        property : submodule
+            type: ini headlineg
+        property : path
+            type: relative path string, unix or windows style
+        property : branch
+            type: git branch name
+
+function new-project
+  createa a temporary folder --pasthrough | cd
+  git initialize
+  
+function fetch-submodules
+        for each submodule entry in .gitmodules // verbos: list each module as checkout occurs
+            ad as git submodule -erroraction Stop
+                if error; print url, error message, then continue loop
+            fetch submodule (but do not check out) -erroraction Stop
+                if error; print path, error message, then continue loop
+
+function urlsTo-GitModule
+    param(urls) -validate null or empty
+    
+    if in git repo; cd to git root; else continue
+    
+    ensure file .gitmodules
+  
+    for each url in urls
+        append to gitmodules new submodule-entry (url,path)
+          where path is root\submodules\repo-name
+
+function find-gitmodule
+    param(file)
+    
+       if file is not null
+        moduleFile = file
+    else
+        x:
+        if current directory does not contain .gitmodule
+            if current directory is a git repo and currently not in git root 
+                change to git root
+                goto x
+            else
+                throw "error: no gitmodule file found"
+        else
+            moduleFile = .\.gitmodule
+    return file
+
+function convertFrom-ini
+
+function convertTo-ini
+
+
+
+function set-branch-gitmodule
+    param(
+        file -nonmandatory -validate path
+        filterPath -nonmandatory
+        filterUrl  -nonmandatory
+        filterBranch -nonmandatory
+        new-branch -mandatory -validate non null or empty -validate valid git branch name
+    )
+    file = find-gitmodule file
+    psobject = file | convertFrom-ini  
+    
+    for each entry in psobject 
+        where 
+            if filterPath (is not null) match path
+                and
+                if filterUrl (is not null) match url
+                and
+                if filterBranch (is not null) match branch
+                    set property branch to new-branch
+                
+                if verbos
+                    print old entry, +"branch = $new-branch"
+                if verbos
+                    if no update done
+                        print "no module entry updated"
+    psobject | convertTo-ini > file -erroraction stop
+    
+          
+function
+  param(urls) -validate null or empty
+    new-project
+      
+    create a masterbranch
+        checkout
+        
+    create a new folder called submodules
+    
+    git append . ; commit -m "1"
+
+    urlsTo-GitModule
+    set-Branch-Gitmodule "common-root"
+    
+    fetch-submodules
+            
+    #for each submodule in submodule folder
+                 
+    
+    
+
+
+
+
+            
+          
+              
