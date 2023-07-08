@@ -21,7 +21,31 @@ function Get-FileGroups {
         Write-Error $_.Exception.Message
     }
 }
+ 
+# deleteDelegate(a,b)
+# {
+#     a type requiring obj a, obj b, delgate x <= deciding which to delete
 
+#     throw error if a & b still excists    
+# }
+
+function deleteDelegate ($a, $b) {
+    param (
+        [Parameter(Mandatory=$true)]
+        [object]$a,
+        [Parameter(Mandatory=$true)]
+        [object]$b,
+        [Parameter(Mandatory=$true)]
+        [scriptblock]$x # delegate to decide which to delete
+    )
+    if (Test-Path $a.path -and Test-Path $b.path) {
+        throw "Both objects still exist"
+    }
+    else {
+        Invoke-Command -ScriptBlock $x -ArgumentList @($a,$b)
+    }
+}
+ 
 # Synopsis: This function filters out the groups that have only one file or have duplicate paths
 # Parameters: 
 #   -Groups: The list of groups to filter. Required, array of objects with properties: count, size, name, path
@@ -130,6 +154,35 @@ function Recursive-GroupByParentPaths {
     }
 }
 
+# Synopsis: This function replaces the name property of each group with a hash value and creates a hashtable of name-path translations
+# Parameters: 
+#   -Groups: The list of groups to replace name with hash. Required, array of objects with properties: count, size, name, path
+# Output: A hashtable of name-path translations
+function Replace-NameWithHash {
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateScript({$_.count -gt 0})]
+        [object[]]$Groups
+    )
+    try {
+        # create a new hashtable object
+        $translations = @{}
+        # loop through the groups
+        foreach ($group in $Groups) {
+            # replace the name property with a hash value using SHA256 algorithm
+            $group.name = Get-FileHash $group.path -Algorithm SHA256 | Select-Object -ExpandProperty Hash
+            # add an entry to the hashtable with the hash as the key and the file name as the value
+            $translations[$group.name] = $group.path | Split-Path -Leaf
+        }
+        # return the hashtable
+        return $translations
+    }
+    catch {
+        # handle any errors
+        Write-Error $_.Exception.Message
+    }
+}
+
 # Synopsis: This function creates a queue of Beyond Compare session files for each group of paths
 # Parameters: 
 #   -Groups: The list of groups to create session files for. Required, array of objects with properties: count, index, parents, path
@@ -158,35 +211,6 @@ function Create-SessionFiles {
         }
         # return the queue
         return $queue
-    }
-    catch {
-        # handle any errors
-        Write-Error $_.Exception.Message
-    }
-}
-
-# Synopsis: This function replaces the name property of each group with a hash value and creates a hashtable of name-path translations
-# Parameters: 
-#   -Groups: The list of groups to replace name with hash. Required, array of objects with properties: count, size, name, path
-# Output: A hashtable of name-path translations
-function Replace-NameWithHash {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateScript({$_.count -gt 0})]
-        [object[]]$Groups
-    )
-    try {
-        # create a new hashtable object
-        $translations = @{}
-        # loop through the groups
-        foreach ($group in $Groups) {
-            # replace the name property with a hash value using SHA256 algorithm
-            $group.name = Get-FileHash $group.path -Algorithm SHA256 | Select-Object -ExpandProperty Hash
-            # add an entry to the hashtable with the hash as the key and the file name as the value
-            $translations[$group.name] = $group.path | Split-Path -Leaf
-        }
-        # return the hashtable
-        return $translations
     }
     catch {
         # handle any errors
