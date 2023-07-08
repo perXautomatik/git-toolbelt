@@ -1,4 +1,13 @@
-# Define a custom type for submodule entries
+
+<# Define a custom type for submodule entries
+    submodule-entry inherents ini,git
+	property : submodule
+	    type: ini headlineg
+	property : path
+	    type: relative path string, unix or windows style
+	property : branch
+	    type: git branch name
+ #>
 class SubmoduleEntry {
     # Inherit from ini and git types
     [ini]$ini
@@ -11,22 +20,26 @@ class SubmoduleEntry {
 
     # Define a constructor that takes an ini headline and a git branch name as parameters
     SubmoduleEntry([string]$headline, [string]$branchName) {
-        # Initialize the ini and git objects
-        $this.ini = [ini]::new()
-        $this.git = [git]::new()
+	# Initialize the ini and git objects
+	$this.ini = [ini]::new()
+	$this.git = [git]::new()
 
-        # Set the submodule property to the headline
-        $this.submodule = $headline
+	# Set the submodule property to the headline
+	$this.submodule = $headline
 
-        # Set the path property to the value of the "path" key in the ini section
-        $this.path = $this.ini[$headline]["path"]
+	# Set the path property to the value of the "path" key in the ini section
+	$this.path = $this.ini[$headline]["path"]
 
-        # Set the branch property to the branch name
-        $this.branch = $branchName
+	# Set the branch property to the branch name
+	$this.branch = $branchName
     }
 }
 
 # Define a function to create a new project
+function new-project
+  createa a temporary folder --pasthrough | cd
+  git initialize
+
 function New-Project {
     # Create a temporary folder and change directory to it
     New-Item -ItemType Directory -Path "$env:TEMP\NewProject" | Push-Location
@@ -39,64 +52,64 @@ function New-Project {
 function Fetch-Submodules {
     # Get the submodule entries from the .gitmodules file
     $submodules = Get-Content .gitmodules | ConvertFrom-Ini | ForEach-Object {
-        # Create a SubmoduleEntry object for each ini section
-        [SubmoduleEntry]::new($_.Name, $_.Value["branch"])
+	# Create a SubmoduleEntry object for each ini section
+	[SubmoduleEntry]::new($_.Name, $_.Value["branch"])
     }
 
     # Loop through each submodule entry
     foreach ($submodule in $submodules) {
-        # Write a verbose message with the submodule url
-        Write-Verbose "Adding submodule $($submodule.ini[$submodule.submodule]["url"])"
+	# Write a verbose message with the submodule url
+	Write-Verbose "Adding submodule $($submodule.ini[$submodule.submodule]["url"])"
 
-        # Try to add the submodule with error action stop
-        try {
-            git submodule add -f $submodule.ini[$submodule.submodule]["url"] -b $submodule.branch -q
-        }
-        catch {
-            # If an error occurs, write an error message with the url and continue the loop
-            Write-Error "Failed to add submodule $($submodule.ini[$submodule.submodule]["url"]): $_"
-            continue
-        }
+	# Try to add the submodule with error action stop
+	try {
+	    git submodule add -f $submodule.ini[$submodule.submodule]["url"] -b $submodule.branch -q
+	}
+	catch {
+	    # If an error occurs, write an error message with the url and continue the loop
+	    Write-Error "Failed to add submodule $($submodule.ini[$submodule.submodule]["url"]): $_"
+	    continue
+	}
 
-        # Write a verbose message with the submodule path
-        Write-Verbose "Fetching submodule $($submodule.path)"
+	# Write a verbose message with the submodule path
+	Write-Verbose "Fetching submodule $($submodule.path)"
 
-        # Try to fetch the submodule with error action stop
-        try {
-            git submodule update --init --recursive --remote --quiet $submodule.path
-        }
-        catch {
-            # If an error occurs, write an error message with the path and continue the loop
-            Write-Error "Failed to fetch submodule $($submodule.path): $_"
-            continue
-        }
+	# Try to fetch the submodule with error action stop
+	try {
+	    git submodule update --init --recursive --remote --quiet $submodule.path
+	}
+	catch {
+	    # If an error occurs, write an error message with the path and continue the loop
+	    Write-Error "Failed to fetch submodule $($submodule.path): $_"
+	    continue
+	}
     }
 }
 
 # Define a function to append urls to the .gitmodules file
 function UrlsTo-GitModule {
     param(
-        [Parameter(Mandatory)]
-        [string[]]$urls # Validate that urls is not null or empty
+	[Parameter(Mandatory)]
+	[string[]]$urls # Validate that urls is not null or empty
     )
 
     # If in a git repository, change directory to the git root, else continue
     if (git rev-parse --is-inside-work-tree) {
-        Push-Location (git rev-parse --show-toplevel)
+	Push-Location (git rev-parse --show-toplevel)
     }
 
     # Ensure that the .gitmodules file exists, or create it if not
     if (-not (Test-Path .gitmodules)) {
-        New-Item -ItemType File -Path .gitmodules | Out-Null
+	New-Item -ItemType File -Path .gitmodules | Out-Null
     }
 
     # Loop through each url in urls
     foreach ($url in $urls) {
-        # Get the repo name from the url by splitting on slashes and taking the last element without the .git extension
-        $repoName = ($url -split "/")[-1] -replace "\.git$"
+	# Get the repo name from the url by splitting on slashes and taking the last element without the .git extension
+	$repoName = ($url -split "/")[-1] -replace "\.git$"
 
-        # Append a new ini section to the .gitmodules file with the url and path properties
-        Add-Content -Path .gitmodules -Value @"
+	# Append a new ini section to the .gitmodules file with the url and path properties
+	Add-Content -Path .gitmodules -Value @"
 [$repoName]
 url = $url
 path = submodules/$repoName
@@ -108,32 +121,32 @@ path = submodules/$repoName
 # Define a function to find the .gitmodules file
 function Find-GitModule {
     param(
-        [string]$file # File is not mandatory and should be validated as a path
+	[string]$file # File is not mandatory and should be validated as a path
     )
 
     # If file is not null, set moduleFile to file, else set it to .\.gitmodules by default
     if ($file) {
-        $moduleFile = $file
+	$moduleFile = $file
     }
     else {
-        $moduleFile = ".\.gitmodules"
+	$moduleFile = ".\.gitmodules"
     }
 
     # Repeat until moduleFile is found or an error is thrown
     do {
-        # If moduleFile does not exist in the current directory
-        if (-not (Test-Path $moduleFile)) {
-            # If the current directory is a git repository and not in the git root
-            if ((git rev-parse --is-inside-work-tree) -and (-not (git rev-parse --is-inside-git-dir))) {
-                # Change to the git root and try again
-                Push-Location (git rev-parse --show-toplevel)
-            }
-            else {
-                # Throw an error and exit the loop
-                throw "Error: no gitmodule file found"
-                break
-            }
-        }
+	# If moduleFile does not exist in the current directory
+	if (-not (Test-Path $moduleFile)) {
+	    # If the current directory is a git repository and not in the git root
+	    if ((git rev-parse --is-inside-work-tree) -and (-not (git rev-parse --is-inside-git-dir))) {
+		# Change to the git root and try again
+		Push-Location (git rev-parse --show-toplevel)
+	    }
+	    else {
+		# Throw an error and exit the loop
+		throw "Error: no gitmodule file found"
+		break
+	    }
+	}
     } while (-not (Test-Path $moduleFile))
 
     # Return the moduleFile path
@@ -153,40 +166,40 @@ function ConvertFrom-Ini {
 
     # Loop through each line in lines
     foreach ($line in $lines) {
-        # Trim any leading or trailing whitespace from the line
-        $line = $line.Trim()
+	# Trim any leading or trailing whitespace from the line
+	$line = $line.Trim()
 
-        # If the line is empty or starts with a comment character, skip it
-        if ($line -eq "" -or $line.StartsWith(";") -or $line.StartsWith("#")) {
-            continue
-        }
+	# If the line is empty or starts with a comment character, skip it
+	if ($line -eq "" -or $line.StartsWith(";") -or $line.StartsWith("#")) {
+	    continue
+	}
 
-        # If the line matches the pattern of an ini section header
-        if ($line -match "^\[(.+)\]$") {
-            # If the section hashtable is not empty, create a psobject from it and add it to the output array
-            if ($section.Count -gt 0) {
-                $output += [pscustomobject]$section
-            }
+	# If the line matches the pattern of an ini section header
+	if ($line -match "^\[(.+)\]$") {
+	    # If the section hashtable is not empty, create a psobject from it and add it to the output array
+	    if ($section.Count -gt 0) {
+		$output += [pscustomobject]$section
+	    }
 
-            # Clear the section hashtable and set its name property to the matched group in the line
-            $section.Clear()
-            $section.Name = $Matches[1]
-        }
-        # Else if the line matches the pattern of an ini key-value pair
-        elseif ($line -match "^([^=]+)=(.+)$") {
-            # Add the key-value pair to the section hashtable, trimming any whitespace from the key and value
-            $section[$Matches[1].Trim()] = $Matches[2].Trim()
-        }
-        else {
-            # Write a warning message that the line is invalid and skip it
-            Write-Warning "Invalid ini line: $line"
-            continue
-        }
+	    # Clear the section hashtable and set its name property to the matched group in the line
+	    $section.Clear()
+	    $section.Name = $Matches[1]
+	}
+	# Else if the line matches the pattern of an ini key-value pair
+	elseif ($line -match "^([^=]+)=(.+)$") {
+	    # Add the key-value pair to the section hashtable, trimming any whitespace from the key and value
+	    $section[$Matches[1].Trim()] = $Matches[2].Trim()
+	}
+	else {
+	    # Write a warning message that the line is invalid and skip it
+	    Write-Warning "Invalid ini line: $line"
+	    continue
+	}
     }
 
     # If the section hashtable is not empty, create a psobject from it and add it to the output array
     if ($section.Count -gt 0) {
-        $output += [pscustomobject]$section
+	$output += [pscustomobject]$section
     }
 
     # Return the output array
@@ -203,17 +216,17 @@ function ConvertTo-Ini {
 
     # Loop through each object in objects
     foreach ($object in $objects) {
-        # Add a line with the object name as an ini section header to the output array
-        $output += "[$($object.Name)]"
+	# Add a line with the object name as an ini section header to the output array
+	$output += "[$($object.Name)]"
 
-        # Loop through each property of the object, excluding the name property
-        foreach ($property in $object.PSObject.Properties | Where-Object {$_.Name -ne "Name"}) {
-            # Add a line with the property name and value as an ini key-value pair to the output array
-            $output += "$($property.Name) = $($property.Value)"
-        }
+	# Loop through each property of the object, excluding the name property
+	foreach ($property in $object.PSObject.Properties | Where-Object {$_.Name -ne "Name"}) {
+	    # Add a line with the property name and value as an ini key-value pair to the output array
+	    $output += "$($property.Name) = $($property.Value)"
+	}
 
-        # Add an empty line to separate sections in the output array
-        $output += ""
+	# Add an empty line to separate sections in the output array
+	$output += ""
     }
 
     # Return the output array as a single string joined by newlines
@@ -223,18 +236,18 @@ function ConvertTo-Ini {
 # Define a function to set branch names in submodule entries in the .gitmodules file
 function Set-Branch-GitModule {
     param(
-        [string]$file, # File is not mandatory and should be validated as a path
-        [string]$filterPath, # FilterPath is not mandatory
-        [string]$filterUrl, # FilterUrl is not mandatory 
-        [string]$filterBranch, # FilterBranch is not mandatory 
-        [Parameter(Mandatory)]
-        [string]$newBranch # NewBranch is mandatory, should be validated as non null or empty and as a valid git branch name 
+	[string]$file, # File is not mandatory and should be validated as a path
+	[string]$filterPath, # FilterPath is not mandatory
+	[string]$filterUrl, # FilterUrl is not mandatory
+	[string]$filterBranch, # FilterBranch is not mandatory
+	[Parameter(Mandatory)]
+	[string]$newBranch # NewBranch is mandatory, should be validated as non null or empty and as a valid git branch name
     )
 
     # Find the .gitmodules file and store its path in moduleFile
     $moduleFile = Find-GitModule -file $file
 
-    # Convert the .gitmodules file content to an array of psobjects and store it in psobject 
+    # Convert the .gitmodules file content to an array of psobjects and store it in psobject
     $psobject = Get-Content -Path $moduleFile | ConvertFrom-Ini
 
     # Initialize a flag to indicate whether any update was done or
