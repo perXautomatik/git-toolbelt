@@ -16,8 +16,6 @@ $filteredJSON.Value | ConvertTo-Json
 
 #>
 
-
-
 Function Expand-Json {
     [CmdletBinding()]
     param (
