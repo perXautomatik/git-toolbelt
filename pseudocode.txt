@@ -33,6 +33,25 @@ class SubmoduleEntry {
 	# Set the branch property to the branch name
 	$this.branch = $branchName
     }
+
+    # Define a ToString method that returns a string representation of the object
+    [string]ToString() {
+	# Create a string builder object to append strings
+	$sb = [System.Text.StringBuilder]::new()
+
+	# Append the submodule headline in square brackets
+	$sb.AppendLine("[$this.submodule]")
+
+	# Append the url and path properties of the git and ini objects respectively
+	$sb.AppendLine("url = $($this.git.url)")
+	$sb.AppendLine("path = $($this.ini[$this.submodule]["path"])")
+
+	# Append a blank line for separation
+	$sb.AppendLine()
+
+	# Return the string builder object as a string
+	return $sb.ToString()
+    }
 }
 
 # Define a function to create a new project
@@ -103,20 +122,25 @@ function UrlsTo-GitModule {
 	New-Item -ItemType File -Path .gitmodules | Out-Null
     }
 
-    # Loop through each url in urls
-    foreach ($url in $urls) {
-	# Get the repo name from the url by splitting on slashes and taking the last element without the .git extension
-	$repoName = ($url -split "/")[-1] -replace "\.git$"
+	# Loop through each url in urls
+	foreach ($url in $urls) {
+		# Get the repo name from the url by splitting on slashes and taking the last element without the .git extension
+		$repoName = ($url -split "/")[-1] -replace "\.git$"
 
-	# Append a new ini section to the .gitmodules file with the url and path properties
-	Add-Content -Path .gitmodules -Value @"
-[$repoName]
-url = $url
-path = submodules/$repoName
+		# Create a new SubmoduleEntry object with the repo name as the headline and the current branch name as the branch name
+		$submoduleEntry = [SubmoduleEntry]::new($repoName, (git rev-parse --abbrev-ref HEAD))
 
-"@
-    }
+		# Set the url property of the git object to the url
+		$submoduleEntry.git.url = $url
+
+		# Set the path property of the ini object to submodules/repoName
+		$submoduleEntry.ini[$repoName]["path"] = "submodules/$repoName"
+
+		# Append the string representation of the SubmoduleEntry object to the .gitmodules file
+		Add-Content -Path .gitmodules -Value $submoduleEntry.ToString()
+	}
 }
+
 
 # Define a function to find the .gitmodules file
 function Find-GitModule {
@@ -250,4 +274,35 @@ function Set-Branch-GitModule {
     # Convert the .gitmodules file content to an array of psobjects and store it in psobject
     $psobject = Get-Content -Path $moduleFile | ConvertFrom-Ini
 
-    # Initialize a flag to indicate whether any update was done or
+    # Initialize a flag to indicate whether any update was done or not
+    $updated = $false
+
+    # Loop through each entry in psobject
+    foreach ($entry in $psobject) {
+	# Check if the entry matches the filter criteria
+	if (
+	    ($null -eq $filterPath -or $entry.path -match $filterPath) -and
+	    ($null -eq $filterUrl -or $entry.url -match $filterUrl) -and
+	    ($null -eq $filterBranch -or $entry.branch -match $filterBranch)
+	) {
+	    # Set the branch property of the entry to newBranch
+	    $entry.branch = $newBranch
+
+	    # Set the updated flag to true
+	    $updated = $true
+
+	    # If verbose, print the updated entry with the new branch property
+	    if ($VerbosePreference -eq "Continue") {
+		Write-Verbose "$($entry.ToString())branch = $newBranch"
+	    }
+	}
+    }
+
+    # If verbose and no update was done, print a message
+    if ($VerbosePreference -eq "Continue" -and -not $updated) {
+	Write-Verbose "No module entry updated"
+    }
+
+    # Convert the psobject array back to ini format and overwrite the .gitmodules file with error action stop
+    $psobject | ConvertTo-Ini | Out-File -FilePath $moduleFile -ErrorAction Stop
+}
