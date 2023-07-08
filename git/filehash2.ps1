@@ -106,7 +106,21 @@ function Delete-File {
     }
 }
 
-# Get the path to the git repo as a parameter with validation attribute
+<#
+.SYNOPSIS
+Deletes duplicate files in a git repo.
+
+.DESCRIPTION
+This script deletes duplicate files in a git repo based on their content hash. It takes the path to the git repo as a parameter and uses the git status --porcelain command to get the list of untracked or staged files. It then loops through the files and compares their hashes using the Get-FileHash function. If two files have the same hash, it deletes one of them, prioritizing untracked files. It also deletes and discards any files that are not in the worktree currently.
+
+.PARAMETER Repo
+The path to the git repo. This parameter is mandatory and must be a valid path.
+
+.EXAMPLE
+.\script.ps1 -Repo "C:\Users\user\Documents\my-repo"
+
+This example deletes duplicate files in the "C:\Users\user\Documents\my-repo" git repo.
+#>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
@@ -114,45 +128,52 @@ param(
     [string]$Repo # The path to the git repo
 )
 
-# Change the current directory to the repo
-Set-Location $Repo
+try {
+    # Change the current directory to the repo
+    Set-Location $Repo
 
-# Get the list of untracked or staged files as additions, not modifications using git status --porcelain command
-$Regex = "[\s]{2,}"
-$Files = Invoke-Expression "git status --porcelain" | ForEach-Object { ($_ -split $Regex)[1] } | Where-Object { $_ -inotmatch "^[\s\t][DM]\s+(.+)" } 
+    # Get the list of untracked or staged files as additions, not modifications using git status --porcelain command
+    $Regex = "[\s]{2,}"
+    $Files = Invoke-Expression "git status --porcelain" | ForEach-Object { ($_ -split $Regex)[1] } | Where-Object { $_ -inotmatch "^[\s\t][DM]\s+(.+)" } 
 
-# Initialize a hashtable to store the file hashes and paths
-$Hashes = @{}
+    # Initialize a hashtable to store the file hashes and paths
+    $Hashes = @{}
 
-# Loop through the files
-foreach ($File in $Files) {
-    # Get the hash of the file content using Get-FileHash function
-    $Hash = Get-FileHash $File
+    # Loop through the files
+    foreach ($File in $Files) {
+        # Get the hash of the file content using Get-FileHash function
+        $Hash = Get-FileHash $File
 
-    # Check if the hash is not null
-    if ($Hash) {
-        # Check if the hash already exists in the hashtable
-        if ($Hashes.ContainsKey($Hash)) {
-            # If yes, delete one of the files with the same content
-            # Prioritize deleting untracked files
-            if ($File -match "^\?\?") {
-                Delete-File $File
+        # Check if the hash is not null
+        if ($Hash) {
+            # Check if the hash already exists in the hashtable
+            if ($Hashes.ContainsKey($Hash)) {
+                # If yes, delete one of the files with the same content using Delete-File function
+                # Prioritize deleting untracked files
+                if ($File -match "^\?\?") {
+                    Delete-File $File
+                }
+                else {
+                    Delete-File $Hashes[$Hash]
+                    # Update the hashtable with the new file path
+                    $Hashes[$Hash] = $File
+                }
             }
             else {
-                Delete-File $Hashes[$Hash]
-                # Update the hashtable with the new file path
+                # If no, add the hash and the file path to the hashtable
                 $Hashes[$Hash] = $File
-            }
-        }
-        else {
-            # If no, add the hash and the file path to the hashtable
-            $Hashes[$Hash] = $File
 
-            # Check if the file exists in the worktree currently using Test-Path cmdlet
-            if (Test-Path $File) {
-                # If yes, delete and discard the file using Delete-File function
-                Delete-File $File
+                # Check if the file exists in the worktree currently using Test-Path cmdlet
+                if (Test-Path $File) {
+                    # If yes, delete and discard the file using Delete-File function
+                    Delete-File $File
+                }
             }
         }
     }
+}
+catch {
+    # Write an error message and exit
+    Write-Error "Failed to delete duplicate files: $_"
+    exit 1
 }
