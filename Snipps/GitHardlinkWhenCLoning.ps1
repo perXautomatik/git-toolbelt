@@ -1,0 +1,1 @@
+﻿git clone -l # when cloning a local directory, hardlink object files when possible in the git dit/objects dir, potentially saving size 
