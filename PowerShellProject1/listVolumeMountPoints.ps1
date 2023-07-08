@@ -1,1 +1,0 @@
-﻿Get-WmiObject Win32_Volume | Format-Table Name, Label, FreeSpace, Capacity
