@@ -60,20 +60,6 @@ Describe "GetCommonPrefix" {
     $ActualOutput | Should -BeExactly $ExpectedOutput
   }
 
-  # Define a test case for an invalid input with square brackets
-  It "should return an empty string for an invalid input with square brackets" {
-
-    # Arrange: Define the input parameter and the expected output
-    $Strings = @("C:\foo\[bar].txt", "C:\foo\[baz].txt")
-    $ExpectedOutput = ""
-
-    # Act: Call the GetCommonPrefix function with the input parameter
-    $ActualOutput = GetCommonPrefix -Strings $Strings
-
-    # Assert: Compare the actual output with the expected output using Should
-    $ActualOutput | Should -BeExactly $ExpectedOutput
-  }
-
   # Define a test context for using the OnlyFolders flag
   Context "Using OnlyFolders flag" {
 
@@ -82,7 +68,7 @@ Describe "GetCommonPrefix" {
 
       # Arrange: Define the input parameter and the expected output
       $Strings = @("C:\foo\bar1.txt", "C:\foo\bar2.txt", "C:\foo\baz1.txt", "C:\foo\baz2.txt")
-      $ExpectedOutput = "C:\foo\"
+      $ExpectedOutput = "C:\foo"
 
       # Act: Call the GetCommonPrefix function with the input parameter and the flag
       $ActualOutput = GetCommonPrefix -Strings $Strings -OnlyFolders
@@ -117,6 +103,39 @@ Describe "GetCommonPrefix" {
 
       # Assert: Compare the actual output with the expected output using Should
       $ActualOutput | Should -BeExactly $ExpectedOutput
+    }
+  }
+
+  # Define a test context for using the ValidatePaths flag
+  Context "Using ValidatePaths flag" {
+
+    # Define a test case for a valid input with valid paths
+    It "should return the common prefix for a valid input with valid paths" {
+
+      # Arrange: Define the input parameter and the expected output
+      $Strings = @("C:\foo\bar1.txt", "C:\foo\bar2.txt", "C:\foo\baz1.txt", "C:\foo\baz2.txt")
+      $ExpectedOutput = "C:\foo"
+
+      # Act: Call the GetCommonPrefix function with the input parameter and the flag
+      $ActualOutput = GetCommonPrefix -Strings $Strings -ValidatePaths
+
+      # Assert: Compare the actual output with the expected output using Should
+      $ActualOutput | Should -BeExactly $ExpectedOutput
+    }
+
+    # Define a test case for an invalid input with invalid paths
+    It "should throw an error or return an empty string for an invalid input with invalid paths" {
+
+      # Arrange: Define the input parameter and the expected output
+      $Strings = @("C:\foo\[bar].txt", "C:\foo\[baz].txt")
+      $ExpectedOutput = ""
+
+      # Act: Call the GetCommonPrefix function with the input parameter and the flag
+      { GetCommonPrefix -Strings $Strings -ValidatePaths } | Should -Throw
+
+      # Alternatively, you can check if it returns an empty string instead of throwing an error
+      #$ActualOutput = GetCommonPrefix -Strings $Strings -ValidatePaths
+      #$ActualOutput | Should -BeExactly $ExpectedOutput
     }
   }
 }

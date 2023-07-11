@@ -21,7 +21,10 @@ function GetCommonPrefix {
     [string[]]$Strings,
 
     # Add a new switch parameter to indicate if only folder paths should be returned
-    [switch]$OnlyFolders
+    [switch]$OnlyFolders,
+
+    # Add another switch parameter to indicate if the strings need to be valid paths or not
+    [switch]$ValidatePaths
   )
 
   # Check if the array is empty or has only one element
@@ -30,6 +33,17 @@ function GetCommonPrefix {
   }
   elseif ($Strings.Length -eq 1) {
     return $Strings[0]
+  }
+
+  # If the strings need to be valid paths, check each string with Test-Path
+  if ($ValidatePaths) {
+    foreach ($String in $Strings) {
+      # If any string is not a valid path, throw an error or return an empty string
+      if (-not (Test-Path -Path $String -IsValid)) {
+        Write-Error "Invalid path: $String"
+        return ""
+      }
+    }
   }
 
   # Initialize the common prefix as the first string in the array
