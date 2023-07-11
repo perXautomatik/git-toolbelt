@@ -3,21 +3,25 @@
 A function to run a search and move files based on their extensions.
 
 .DESCRIPTION
-This function uses Search-Everything and trid to search for files that are not gz, webp or gif in the current directory or its subdirectories, excluding .git folders. It then moves the files to a destination drive based on their extensions. It uses multithreading to speed up the process.
+This function uses Search-Everything and trid to search for files that are not gz, webp or gif in the current directory or its subdirectories, excluding .git folders. It then moves the files to a destination drive based on their extensions. It uses multithreading to speed up the process. If the file extension cannot be determined by trid, it moves the file to a different folder on the same drive.
 
 .PARAMETER DestinationDrive
 The drive letter where the files will be moved to. Default is L:.
 
-.EXAMPLE
-runx -DestinationDrive M:
+.PARAMETER OtherFolder
+The name of the folder where the files will be moved to if the condition is not met. Default is Other.
 
-This will search for files that are not gz, webp or gif in the current directory or its subdirectories, excluding .git folders, and move them to M: drive based on their extensions using multithreading.
+.EXAMPLE
+runx -DestinationDrive M: -OtherFolder Unknown
+
+This will search for files that are not gz, webp or gif in the current directory or its subdirectories, excluding .git folders, and move them to M: drive based on their extensions using multithreading. If the file extension cannot be determined by trid, it moves the file to M:\Unknown folder.
 #>
 function runx {
     [CmdletBinding()]
     param(
       [ValidatePattern("^[A-Z]:$")]
-      [string]$DestinationDrive = "L:"
+      [string]$DestinationDrive = "L:",
+      [string]$OtherFolder = "Other"
     )
   
     try {
@@ -43,7 +47,7 @@ function runx {
   
           # Start a new job for each file
           $job = Start-Job -ScriptBlock {
-            param($file, $DestinationDrive)
+            param($file, $DestinationDrive, $OtherFolder)
   
             # Get the file extension using trid
             $q = trid $file -ce
@@ -75,9 +79,24 @@ function runx {
               }
             }
             else {
-              Write-Output $g
+              # Get the drive letter and the file name of the original file
+              $driveLetter = Split-Path -Path $file -Qualifier
+              $fileName = Split-Path -Path $file -Leaf
+  
+              # Construct the destination path by appending the other folder name
+              $destinationPath = Join-Path -Path "$driveLetter\$OtherFolder" -ChildPath $fileName
+  
+              # Create the other folder if it does not exist
+              if (-not (Test-Path -Path "$driveLetter\$OtherFolder")) {
+                New-Item -Path "$driveLetter\$OtherFolder" -ItemType Directory
+              }
+  
+              # Move the file to the destination path
+              Move-Item -Path $file -Destination $destinationPath
+  
+              Write-Output "Moved file to other folder: $destinationPath"
             }
-          } -ArgumentList $file, $DestinationDrive
+          } -ArgumentList $file, $DestinationDrive, $OtherFolder
   
           # Add the job object to the array
           $jobs += $job
