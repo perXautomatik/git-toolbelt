@@ -8,8 +8,11 @@ This function uses Search-Everything and trid to search for files that are not g
 .PARAMETER DestinationDrive
 The drive letter where the files will be moved to. Default is L:.
 
+.PARAMETER OtherFolder
+The name of the folder where the files will be moved to if the condition is not met. Default is Other.
+
 .EXAMPLE
-runx -DestinationDrive M:
+runx -DestinationDrive M: -OtherFolder Unknown
 
 This will search for files that are not gz, webp or gif in the current directory or its subdirectories, excluding .git folders, and move them to M: drive based on their extensions.
 #>
@@ -17,7 +20,8 @@ function runx {
     [CmdletBinding()]
     param(
       [ValidatePattern("^[A-Z]:$")]
-      [string]$DestinationDrive = "L:"
+      [string]$DestinationDrive = "L:",
+      [string]$OtherFolder = "Other"
     )
   
     try {
@@ -68,8 +72,23 @@ function runx {
             }
           }
           else {
-            Write-Output $g
-          }
+              # Get the drive letter and the file name of the original file
+              $driveLetter = Split-Path -Path $file -Qualifier
+              $fileName = Split-Path -Path $file -Leaf
+  
+              # Construct the destination path by appending the other folder name
+              $destinationPath = Join-Path -Path "$driveLetter\$OtherFolder" -ChildPath $fileName
+  
+              # Create the other folder if it does not exist
+              if (-not (Test-Path -Path "$driveLetter\$OtherFolder")) {
+                New-Item -Path "$driveLetter\$OtherFolder" -ItemType Directory
+              }
+  
+              # Move the file to the destination path
+              Move-Item -Path $file -Destination $destinationPath
+  
+              Write-Output "Moved file to other folder: $destinationPath"
+            }
         }
   
         # Complete the progress bar
