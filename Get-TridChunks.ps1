@@ -1,4 +1,4 @@
-
+. "$PSScriptRoot\Get-commonPrefix.ps1"
   <#
   .SYNOPSIS
   A function to get chunks of paths for trid based on a chunk size and a wildcard match criteria.
@@ -45,29 +45,32 @@
       $numChunks = [Math]::Ceiling($count / $ChunkSize)
   
       # Loop through each chunk and create a wildcard path for trid
-      for ($i = 0; $i -lt $numChunks; $i++) {
-        # Get the start index and the length of the chunk
-        $startIndex = $i * $ChunkSize
-        $length = [Math]::Min($ChunkSize, $count - $startIndex)
-  
-        # Get the chunk of paths from the group
-        $chunk = $group.Group[$startIndex..($startIndex + $length - 1)]
-  
-        # Get the common prefix of the file names in the chunk
-        $prefix = [System.IO.Path]::GetCommonPrefix($chunk | Split-Path -Leaf)
-  
-        # Check if there are any other files in the group that would be matched by the prefix wildcard
-        $otherFiles = $group.Group | Where-Object {$_ -like "$parentPath\$prefix*"} | Where-Object {$chunk -notcontains $_}
-  
-        # If there are no other files, use the prefix wildcard as the path for trid
-        if (-not $otherFiles) {
-          $chunks += "$parentPath\$prefix*"
-        }
-        else {
-          # Otherwise, use each individual path in the chunk as separate paths for trid
-          foreach ($path in $chunk) {
-            $chunks += "$path"
-          }
+        for ($i = 0; $i -lt $numChunks; $i++) 
+        {
+            # Get the start index and the length of the chunk
+            $startIndex = $i * $ChunkSize
+            $length = [Math]::Min($ChunkSize, $count - $startIndex)
+    
+            # Get the chunk of paths from the group
+            $chunk = $group.Group[$startIndex..($startIndex + $length - 1)]
+    
+            # Get the common prefix of the file names in the chunk
+            $qq = $chunk | Split-Path -Leaf
+            $prefix = GetCommonPrefix($qq)
+    
+            # Check if there are any other files in the group that would be matched by the prefix wildcard
+            $otherFiles = $group.Group | Where-Object {$_ -like "$parentPath\$prefix*"} | Where-Object {$chunk -notcontains $_}
+    
+            # If there are no other files, use the prefix wildcard as the path for trid
+            if (-not $otherFiles) {
+            $chunks += "$parentPath\$prefix*"
+            }
+            else {
+            # Otherwise, use each individual path in the chunk as separate paths for trid
+            foreach ($path in $chunk) {
+                $chunks += "$path"
+            }
+            }
         }
     }
 }  

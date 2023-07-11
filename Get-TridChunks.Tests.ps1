@@ -1,5 +1,5 @@
 # Import the script that contains the Get-TridChunks function
-. .\Get-TridChunks.ps1
+. "$PSScriptRoot\Get-TridChunks.ps1"
 
 # Define a test suite for the Get-TridChunks function
 Describe "Get-TridChunks" {
