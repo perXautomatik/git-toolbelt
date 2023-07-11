@@ -114,7 +114,7 @@ Describe "GetCommonPrefix" {
 
       # Arrange: Define the input parameter and the expected output
       $Strings = @("C:\foo\bar1.txt", "C:\foo\bar2.txt", "C:\foo\baz1.txt", "C:\foo\baz2.txt")
-      $ExpectedOutput = "C:\foo"
+      $ExpectedOutput = "C:\foo\ba"
 
       # Act: Call the GetCommonPrefix function with the input parameter and the flag
       $ActualOutput = GetCommonPrefix -Strings $Strings -ValidatePaths

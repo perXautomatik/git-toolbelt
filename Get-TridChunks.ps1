@@ -31,7 +31,7 @@
     $chunks = @()
   
     # Loop through the paths and group them by their parent paths
-    $groups = $Paths | Group-Object -Property {Split-Path -Path $_ -Parent}
+    $groups = $Paths | Group-Object -Property {[System.IO.Path]::GetDirectoryName($_)}
   
     # Loop through each group and create chunks of paths based on the chunk size and the wildcard match criteria
     foreach ($group in $groups) {
@@ -73,4 +73,5 @@
             }
         }
     }
+    return $chunks
 }  
