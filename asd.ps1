@@ -28,7 +28,8 @@ function runx {
       [ValidateRange(1, 100)]
       [int]$ChunkSize = 100
     )
-    . .\Get-TridChunks.ps1
+  # Import the script that contains the Get-TridChunks function
+  . "$PSScriptRoot\Get-TridChunks.ps1"
     try {
       # Search for files that are not gz, webp or gif, excluding .git folders
       $v = Search-Everything -PathExclude ".git" -filter "F: folder\ file: !ext:gz;webp;gif" -Global
