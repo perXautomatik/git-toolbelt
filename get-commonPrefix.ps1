@@ -17,7 +17,11 @@ function GetCommonPrefix {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
-    [string[]]$Strings
+    [AllowEmptyCollection ()]
+    [string[]]$Strings,
+
+    # Add a new switch parameter to indicate if only folder paths should be returned
+    [switch]$OnlyFolders
   )
 
   # Check if the array is empty or has only one element
@@ -48,6 +52,11 @@ function GetCommonPrefix {
     if ($commonPrefix -eq "") {
       return $commonPrefix
     }
+  }
+
+  # If only folder paths are requested, use Split-Path to get only the folder part of the common prefix
+  if ($OnlyFolders) {
+    $commonPrefix = Split-Path -Path $commonPrefix -Parent
   }
 
   # Return the common prefix after looping through all the strings

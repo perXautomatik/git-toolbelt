@@ -15,11 +15,11 @@ Describe "GetCommonPrefix" {
     $ActualOutput = GetCommonPrefix -Strings $Strings
 
     # Assert: Compare the actual output with the expected output using Should
-    $ActualOutput | Should -Be $ExpectedOutput
+    $ActualOutput | Should -BeExactly $ExpectedOutput
   }
 
-  # Define a test case for a single input
-  It "should return the same string for a single input" {
+  # Define a test case for a single element input
+  It "should return the same string for a single element input" {
 
     # Arrange: Define the input parameter and the expected output
     $Strings = @("C:\foo\bar.txt")
@@ -29,7 +29,7 @@ Describe "GetCommonPrefix" {
     $ActualOutput = GetCommonPrefix -Strings $Strings
 
     # Assert: Compare the actual output with the expected output using Should
-    $ActualOutput | Should -Be $ExpectedOutput
+    $ActualOutput | Should -BeExactly $ExpectedOutput
   }
 
   # Define a test case for a valid input with a common prefix
@@ -37,13 +37,13 @@ Describe "GetCommonPrefix" {
 
     # Arrange: Define the input parameter and the expected output
     $Strings = @("C:\foo\bar1.txt", "C:\foo\bar2.txt", "C:\foo\baz1.txt", "C:\foo\baz2.txt")
-    $ExpectedOutput = "C:\foo\"
+    $ExpectedOutput = "C:\foo\ba"
 
     # Act: Call the GetCommonPrefix function with the input parameter
     $ActualOutput = GetCommonPrefix -Strings $Strings
 
     # Assert: Compare the actual output with the expected output using Should
-    $ActualOutput | Should -Be $ExpectedOutput
+    $ActualOutput | Should -BeExactly $ExpectedOutput
   }
 
   # Define a test case for a valid input with no common prefix
@@ -57,8 +57,66 @@ Describe "GetCommonPrefix" {
     $ActualOutput = GetCommonPrefix -Strings $Strings
 
     # Assert: Compare the actual output with the expected output using Should
-    $ActualOutput | Should -Be $ExpectedOutput
+    $ActualOutput | Should -BeExactly $ExpectedOutput
   }
 
-  # You can add more test cases as needed
+  # Define a test case for an invalid input with square brackets
+  It "should return an empty string for an invalid input with square brackets" {
+
+    # Arrange: Define the input parameter and the expected output
+    $Strings = @("C:\foo\[bar].txt", "C:\foo\[baz].txt")
+    $ExpectedOutput = ""
+
+    # Act: Call the GetCommonPrefix function with the input parameter
+    $ActualOutput = GetCommonPrefix -Strings $Strings
+
+    # Assert: Compare the actual output with the expected output using Should
+    $ActualOutput | Should -BeExactly $ExpectedOutput
+  }
+
+  # Define a test context for using the OnlyFolders flag
+  Context "Using OnlyFolders flag" {
+
+    # Define a test case for a valid input with a common prefix that includes a file name
+    It "should return only the folder part of the common prefix for a valid input with a common prefix that includes a file name" {
+
+      # Arrange: Define the input parameter and the expected output
+      $Strings = @("C:\foo\bar1.txt", "C:\foo\bar2.txt", "C:\foo\baz1.txt", "C:\foo\baz2.txt")
+      $ExpectedOutput = "C:\foo\"
+
+      # Act: Call the GetCommonPrefix function with the input parameter and the flag
+      $ActualOutput = GetCommonPrefix -Strings $Strings -OnlyFolders
+
+      # Assert: Compare the actual output with the expected output using Should
+      $ActualOutput | Should -BeExactly $ExpectedOutput
+    }
+
+    # Define a test case for a valid input with a common prefix that is only a folder path
+    It "should return the same folder path for a valid input with a common prefix that is only a folder path" {
+
+      # Arrange: Define the input parameter and the expected output
+      $Strings = @("C:\foo\bar\", "C:\foo\baz\", "C:\foo\qux\")
+      $ExpectedOutput = "C:\foo\"
+
+      # Act: Call the GetCommonPrefix function with the input parameter and the flag
+      $ActualOutput = GetCommonPrefix -Strings $Strings -OnlyFolders
+
+      # Assert: Compare the actual output with the expected output using Should
+      $ActualOutput | Should -BeExactly $ExpectedOutput
+    }
+
+    # Define a test case for a valid input with no common prefix
+    It "should return an empty string for a valid input with no common prefix" {
+
+      # Arrange: Define the input parameter and the expected output
+      $Strings = @("C:\foo\bar.txt", "D:\baz\qux.txt", "E:\quux\corge.txt")
+      $ExpectedOutput = ""
+
+      # Act: Call the GetCommonPrefix function with the input parameter and the flag
+      $ActualOutput = GetCommonPrefix -Strings $Strings -OnlyFolders
+
+      # Assert: Compare the actual output with the expected output using Should
+      $ActualOutput | Should -BeExactly $ExpectedOutput
+    }
+  }
 }
