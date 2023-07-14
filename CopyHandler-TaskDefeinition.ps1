@@ -1,4 +1,65 @@
-﻿# Define a function to create an XML element with a given name and value
+﻿# Define a function to create and save an XML document with the given elements
+function CopyHandler-TaskDefinition {
+    <#
+    .SYNOPSIS
+    Creates and saves an XML document with the given elements.
+    .PARAMETER DestinationPath
+    The destination path for the task definition.
+    .PARAMETER OperationType
+    The operation type for the task definition. The default value is 1.
+    .PARAMETER SourcePaths
+    The source paths for the task definition.
+    .PARAMETER Version
+    The version for the task definition. The default value is 1.
+    .PARAMETER FilePath
+    The file path to save the XML document to.
+    .EXAMPLE
+# Create an array of source paths
+$paths = @(
+    "C:\Program Files\Copy Handler\libictranslate64u.dll",
+    "C:\Program Files\Copy Handler\License.txt",
+    "C:\Program Files\Copy Handler\mfc120u.dll",
+    "C:\Program Files\Copy Handler\mfcm120u.dll",
+    "C:\Program Files\Copy Handler\msvcp120.dll"
+)
+
+# Create and save an XML document with the given elements by piping the source paths to the function
+$paths | New-And-Save-XmlDocument -DestinationPath "E:\" -FilePath "./output.xml"
+    #>
+    # Validate the parameters
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$DestinationPath,
+
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$OperationType = "1",
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$SourcePaths,
+
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Version = "1",
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FilePath
+
+    )
+
+    # Create an XML document with the given elements
+    $xml = New-XmlDocument -DestinationPath $DestinationPath -OperationType $OperationType -SourcePaths $SourcePaths -Version $Version
+
+    # Save the XML document to the file path with error checking
+    Save-XmlDocument -XmlDocument $xml -FilePath $FilePath
+
+}
+
+# Define a function to create an XML element with a given name and value
 function New-XmlElement {
     <#
     .SYNOPSIS
@@ -143,17 +204,5 @@ function Save-XmlDocument {
      }
 }
 
-# Create an array of source paths
-$paths = @(
-    "C:\Program Files\Copy Handler\libictranslate64u.dll",
-    "C:\Program Files\Copy Handler\License.txt",
-    "C:\Program Files\Copy Handler\mfc120u.dll",
-    "C:\Program Files\Copy Handler\mfcm120u.dll",
-    "C:\Program Files\Copy Handler\msvcp120.dll"
-)
 
-# Create an XML document with the given elements
-$xml = New-XmlDocument -DestinationPath "E:\" -OperationType "1" -SourcePaths $paths -Version "1"
 
-# Save the XML document to a file named output.xml in the current directory
-Save-XmlDocument -XmlDocument $xml -FilePath "./output.xml"
