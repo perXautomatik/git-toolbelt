@@ -13,6 +13,8 @@ function CopyHandler-TaskDefinition {
     The version for the task definition. The default value is 1.
     .PARAMETER FilePath
     The file path to save the XML document to.
+    .PARAMETER PassThru
+    A switch parameter that indicates whether to return the destination parameter.
     .EXAMPLE
 # Create an array of source paths
 $paths = @(
@@ -29,25 +31,28 @@ $paths | New-And-Save-XmlDocument -DestinationPath "E:\" -FilePath "./output.xml
     # Validate the parameters
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$DestinationPath,
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$DestinationPath,
 
-        [Parameter(Mandatory=$false)]
-        [ValidateNotNullOrEmpty()]
-        [string]$OperationType = "1",
+	[Parameter(Mandatory=$false)]
+	[ValidateNotNullOrEmpty()]
+	[string]$OperationType = "1",
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$SourcePaths,
+	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string[]]$SourcePaths,
 
-        [Parameter(Mandatory=$false)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Version = "1",
+	[Parameter(Mandatory=$false)]
+	[ValidateNotNullOrEmpty()]
+	[string]$Version = "1",
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$FilePath
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$FilePath,
+
+	[Parameter(Mandatory=$false)]
+	[switch]$PassThru
 
     )
 
@@ -57,7 +62,10 @@ $paths | New-And-Save-XmlDocument -DestinationPath "E:\" -FilePath "./output.xml
     # Save the XML document to the file path with error checking
     Save-XmlDocument -XmlDocument $xml -FilePath $FilePath
 
-}
+    # If the PassThru switch is specified, return the destination parameter
+    if ($PassThru) {
+	Write-Output $DestinationPath
+    }
 
 # Define a function to create an XML element with a given name and value
 function New-XmlElement {
@@ -74,13 +82,13 @@ function New-XmlElement {
     # Validate the parameters
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Name,
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$Name,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Value
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$Value
     )
 
     # Create a new XML element with the name and value
@@ -110,21 +118,21 @@ function New-XmlDocument {
     # Validate the parameters
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$DestinationPath,
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$DestinationPath,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$OperationType,
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$OperationType,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$SourcePaths,
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string[]]$SourcePaths,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Version
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$Version
     )
 
     # Create a new XML document
@@ -146,8 +154,8 @@ function New-XmlDocument {
 
     # Loop through each source path and create a Path element with its value and append it to the SourcePaths element
     foreach ($path in $SourcePaths) {
-        $p = New-XmlElement -Name "Path" -Value $path
-        $src.AppendChild($p)
+	$p = New-XmlElement -Name "Path" -Value $path
+	$src.AppendChild($p)
     }
 
     $root.AppendChild($src)
@@ -183,24 +191,24 @@ function Save-XmlDocument {
      # Validate the parameters
      [CmdletBinding()]
      param (
-         [Parameter(Mandatory=$true)]
-         [ValidateNotNullOrEmpty()]
-         [System.Xml.XmlDocument]$XmlDocument,
+	 [Parameter(Mandatory=$true)]
+	 [ValidateNotNullOrEmpty()]
+	 [System.Xml.XmlDocument]$XmlDocument,
 
-         [Parameter(Mandatory=$true)]
-         [ValidateNotNullOrEmpty()]
-         [string]$FilePath
+	 [Parameter(Mandatory=$true)]
+	 [ValidateNotNullOrEmpty()]
+	 [string]$FilePath
 
      )
 
      # Try to save the XML document to the file path and catch any errors
      try {
-         Write-Host "Saving XML document to $FilePath..."
-         $XmlDocument.Save($FilePath)
-         Write-Host "XML document saved successfully."
+	 Write-Host "Saving XML document to $FilePath..."
+	 $XmlDocument.Save($FilePath)
+	 Write-Host "XML document saved successfully."
      }
      catch {
-         Write-Error "An error occurred while saving the XML document: $_"
+	 Write-Error "An error occurred while saving the XML document: $_"
      }
 }
 
