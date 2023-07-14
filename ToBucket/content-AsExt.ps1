@@ -1,5 +1,5 @@
 # .SYNOPSIS
-# A function to get the content of a file and save it as a different extension
+# A function to direct the content of a file and "get-item" as a different extension
 # .PARAMETER Path
 # The path to the file to get the content from
 # .PARAMETER Ext
