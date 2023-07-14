@@ -85,7 +85,7 @@ function runx {
               }
   
               # Move the file to the destination path
-              Move-Item -Path $file -Destination $destinationPath
+              Move-Item -Path $file -Destination $destinationPath -Force
   
               Write-Output "Moved file to other folder: $destinationPath"
             }
