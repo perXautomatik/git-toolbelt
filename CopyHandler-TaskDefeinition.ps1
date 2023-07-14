@@ -12,11 +12,11 @@ function CopyHandler-TaskDefinition {
     .PARAMETER Version
     The version for the task definition. The default value is 1.
     .PARAMETER FilePath
-    The file path to save the XML document to.
+    The file path to save the XML document to. If not specified, a temporary file will be created with the .xml extension.
     .PARAMETER PassThru
-    A switch parameter that indicates whether to return the destination parameter.
+    A switch parameter that indicates whether to return the file path of the saved XML document.
     .EXAMPLE
-# Create an array of source paths
+    "C:\Program Files\Copy Handler\libictranslate64u.dll", "C:\Program Files\Copy Handler\License.txt" | New-And-Save-XmlDocument -DestinationPath "E:\" -PassThru
 $paths = @(
     "C:\Program Files\Copy Handler\libictranslate64u.dll",
     "C:\Program Files\Copy Handler\License.txt",
@@ -47,7 +47,7 @@ $paths | New-And-Save-XmlDocument -DestinationPath "E:\" -FilePath "./output.xml
 	[ValidateNotNullOrEmpty()]
 	[string]$Version = "1",
 
-	[Parameter(Mandatory=$true)]
+	[Parameter(Mandatory=$false)]
 	[ValidateNotNullOrEmpty()]
 	[string]$FilePath,
 
@@ -59,14 +59,21 @@ $paths | New-And-Save-XmlDocument -DestinationPath "E:\" -FilePath "./output.xml
     # Create an XML document with the given elements
     $xml = New-XmlDocument -DestinationPath $DestinationPath -OperationType $OperationType -SourcePaths $SourcePaths -Version $Version
 
+    # If the FilePath parameter is not specified, create a temporary file with the .xml extension
+    if (-not $FilePath) {
+	Write-Host "No file path specified. Creating a temporary file..."
+	$FilePath = [System.IO.Path]::GetTempFileName() + ".xml"
+	Write-Host "Temporary file created: $FilePath"
+    }
+
     # Save the XML document to the file path with error checking
     Save-XmlDocument -XmlDocument $xml -FilePath $FilePath
 
-    # If the PassThru switch is specified, return the destination parameter
+    # If the PassThru switch is specified, return the file path of the saved XML document
     if ($PassThru) {
-	Write-Output $DestinationPath
+	Write-Output $FilePath
     }
-
+}
 # Define a function to create an XML element with a given name and value
 function New-XmlElement {
     <#
