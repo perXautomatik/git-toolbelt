@@ -75,3 +75,60 @@ Get-Files | Group-Files | ForEach-Object {
   $folderName = $_.Name
   $_.Group | Move-FileToFolder -FolderName $folderName
 }
+
+function Create-FolderFromFile {
+    [CmdletBinding()]
+    param (
+        # The name of the file to process
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $FileName
+    )
+
+    begin {
+        # Initialize a counter for duplicate folders
+        $nameSegments = [sorted]@()
+        $counter = 0
+    }
+
+    process {
+        try {
+            # Get the full path of the file
+            $file = Get-Item -Path $FileName -ErrorAction Stop
+
+            # Get the folder name from the file name, excluding any numbers in parentheses at the end
+            $file.BaseName -split '[^a-zA-Z0-9\s]+'| % { $nameSegments[$_]++ }
+        }
+        catch {
+            # Write an error message to indicate failure
+            Write-Error -Message "Failed to process $($file.Name): $($_.Exception.Message)"
+        }
+    }
+
+    end
+    {
+        # Get the parent directory of the file
+        $parentDir = $file.DirectoryName
+
+        # Join the parent directory and the folder name to get the full path of the folder
+        $folderPath = Join-Path -Path $parentDir -ChildPath $folderName
+
+        # Check if the folder already exists
+        if (Test-Path -Path $folderPath) {
+            # Increment the counter and append it to the folder name
+            $counter++
+            $folderPath = Join-Path -Path $parentDir -ChildPath ($folderName + " ($counter)")
+        }
+
+        # Create the folder
+        New-Item -Path $folderPath -ItemType Directory -ErrorAction Stop | Out-Null
+
+        # Move the file into the folder
+        Move-Item -Path $file.FullName -Destination $folderPath -ErrorAction Stop
+
+        # Write a verbose message to indicate success
+        Write-Verbose -Message "Moved $($file.Name) to $folderPath"
+
+    }
+}
