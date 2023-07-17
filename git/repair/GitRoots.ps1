@@ -1,6 +1,4 @@
-﻿Sure, I can try to do that. Here is one possible way to break up the script into smaller functions:
-
-<#
+﻿<#
 .SYNOPSIS
 Finds the git roots of the subdirectories under a given path and joins them with the subdirectory names.
 
