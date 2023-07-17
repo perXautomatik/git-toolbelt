@@ -7,26 +7,36 @@ param (
 )
 
 # Create a temporary folder
-$TempFolder = New-TemporaryFile | % { Remove-Item -Path $_.FullName -Force; New-Item -ItemType Directory -Path $_.FullName }
-$TempFolder
-# Clone the repo into the temporary folder
-git clone $RepoURL $TempFolder
+$TempFolder = New-TemporaryFile | % { Remove-Item -Path $_.FullName -Force; 
+
+try {
+New-Item -ItemType Directory -Path $_.FullName -ErrorAction Stop
+}
+catch
+{
+    rm -Path $_.FullName;
+    New-Item -ItemType Directory -Path $_.FullName 
+}
+}
 
 # Change the current directory to the repo path
-Set-Location $TempFolder
-
-# Get all the files in the repo that match the pattern
-$Files = Get-ChildItem -Recurse -Filter "*$MatchString*"
+Set-Location $TempFolder -PassThru
 
 
+# Clone the repo into the temporary folder
+invoke-expression "git clone --local $RepoURL $TempFolder" 
 
+git status
 
-  # Check if filter-repo is available
+# Check if filter-repo is available
   if (Get-Command git-filter-repo -ErrorAction SilentlyContinue) {
     # Use filter-repo to get only the history relevant to the file
     git filter-repo --path-glob "*$MatchString*" --force
   }
   else {
+  # Get all the files in the repo that match the pattern
+$Files = Get-ChildItem -Recurse -Filter "*$MatchString*"
+
 # Loop through each file
 foreach ($File in $Files) {
   # Get the relative path of the file
@@ -37,8 +47,8 @@ foreach ($File in $Files) {
   
     }
 }
-return $TempFolder
+
 }
 
-gsx -RepoPath 'C:\ProgramData\scoop\buckets\anderlli0053_DEV-tools\bucket' -MatchString 'waifu2x*'
+gsx -RepoURL 'C:\ProgramData\scoop\buckets\anderlli0053_DEV-tools\' -MatchString 'bucket/waifu2x'
 
