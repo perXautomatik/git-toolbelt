@@ -18,22 +18,25 @@ Set-Location $TempFolder
 # Get all the files in the repo that match the pattern
 $Files = Get-ChildItem -Recurse -Filter "*$MatchString*"
 
+
+
+
+  # Check if filter-repo is available
+  if (Get-Command git-filter-repo -ErrorAction SilentlyContinue) {
+    # Use filter-repo to get only the history relevant to the file
+    git filter-repo --path-glob "*$MatchString*" --force
+  }
+  else {
 # Loop through each file
 foreach ($File in $Files) {
   # Get the relative path of the file
   $FilePath = $File.FullName.Replace($RepoPath, "")
 
-  # Check if filter-repo is available
-  if (Get-Command git-filter-repo -ErrorAction SilentlyContinue) {
-    # Use filter-repo to get only the history relevant to the file
-    git filter-repo --path "$FilePath" --force
-  }
-  else {
     # Use filter-branch to get only the history relevant to the file
     git filter-branch --tree-filter "git ls-files -z | grep -zv '$FilePath' | xargs -0 rm" --prune-empty --force
-  }
+  
     }
-
+}
 return $TempFolder
 }
 
