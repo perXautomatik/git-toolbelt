@@ -28,7 +28,6 @@ function Join-ScriptFiles {
         $DestinationFile,
 
         [Parameter(Mandatory = $true)]
-        [ValidateScript({$_ -match "{0}"})]
         [string]
         $Delimiter
     )
@@ -96,7 +95,6 @@ function Split-ScriptFiles {
         $DestinationPath,
 
         [Parameter(Mandatory = $true)]
-        [ValidateScript({$_ -match "\(.+\)"})]
         [string]
         $DelimiterPattern
     )
@@ -123,14 +121,17 @@ function Split-ScriptFiles {
         Write-Error "Failed to split content by $DelimiterPattern"
         return
     }
-
+    
     # Loop through each split content and skip the first empty one
-    for ($i = 1; $i -lt $splitContent.Count; $i += 2) {
+    for ($i = 1; $i -lt $splitContent.Count; $i += 1) {
+        $relativePath = $null;
+        $d = $splitContent[$i] -split '\r?\n|\r'
+
         # Get the relative path of the script from the first group
-        $relativePath = $splitContent[$i]
+        $relativePath = $d[0]
 
         # Get the script content from the second group
-        $scriptContent = $splitContent[$i + 1]
+        $scriptContent = ($d[1..$d.Length]) -join ''
 
         # Join the destination path with the relative path to get the full path of the script
         try {
@@ -153,11 +154,20 @@ function Split-ScriptFiles {
             }
         }
 
-        # Write the script content to the script path
         try {
-            Set-Content -Path $scriptPath -Value $scriptContent -ErrorAction Stop
+            New-Item -Path $scriptPath -ItemType File -ErrorAction Stop | Out-Null
         }
         catch {
+            Write-Error "Failed to create file $scriptPath"
+            continue
+        }
+
+        # Write the script content to the script path
+        try {
+            Set-Content -Path $scriptPath -Value $scriptContent
+        }
+        catch {
+            Write-Error $_
             Write-Error "Failed to write content to $scriptPath"
             continue
         }

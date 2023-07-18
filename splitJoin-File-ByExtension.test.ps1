@@ -9,6 +9,7 @@ BeforeAll {
     New-Item -Path $SourcePath -ItemType Directory | Out-Null
     New-Item -Path (Join-Path -Path $SourcePath -ChildPath 'Script1.ps1') -ItemType File -Value 'Write-Host "Hello from Script1"' | Out-Null
     New-Item -Path (Join-Path -Path $SourcePath -ChildPath 'Script2.ps1') -ItemType File -Value 'Write-Host "Hello from Script2"' | Out-Null
+    New-Item -Path (Join-Path -Path $SourcePath -ChildPath 'Subfolder') -ItemType Directory  | Out-Null
     New-Item -Path (Join-Path -Path $SourcePath -ChildPath 'Subfolder\Script3.ps1') -ItemType File -Value 'Write-Host "Hello from Script3"' | Out-Null
 
     # Define a delimiter for joining the script files
@@ -63,10 +64,13 @@ BeforeAll {
     )
 
     # Define a delimiter pattern for splitting the script files
-    $DelimiterPattern = '# \(.+\)'
+    $DelimiterPattern = '# '
 
     # Define a destination path for splitting the script files
+   
     $DestinationPath = Join-Path -Path $TestDrive -ChildPath 'Scripts'
+    New-Item -Path $DestinationPath -ItemType Directory  | Out-Null
+  
 }
 
 # Clean up the temporary files after testing
