@@ -27,9 +27,8 @@ function Join-ScriptFiles {
         [string]
         $DestinationFile,
 
-        [Parameter(Mandatory = $true)]
         [string]
-        $Delimiter
+        $Delimiter = '# {0}'
     )
 
     # If destination file is not specified, use a default name in the same directory as the source path
