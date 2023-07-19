@@ -14,13 +14,13 @@ The path of the csv file where the results will be exported.
 function Find-Git-Roots {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $BasePath,
+	[Parameter(Mandatory = $true)]
+	[string]
+	$BasePath,
 
-        [Parameter(Mandatory = $true)]
-        [string]
-        $CsvPath
+	[Parameter(Mandatory = $true)]
+	[string]
+	$CsvPath
     )
 
     # Redirect the standard error output to standard output for git commands
@@ -31,15 +31,15 @@ function Find-Git-Roots {
 
     # Loop through each subdirectory and find its git root
     $results = foreach ($subdir in $subdirs) {
-        # Change the current location to the subdirectory
-        Set-Location -Path $subdir.FullName
+	# Change the current location to the subdirectory
+	Set-Location -Path $subdir.FullName
 
-        # Create a custom object with the subdirectory name, path and git root
-        [PSCustomObject]@{
-            FolderName = $subdir.Name
-            path       = $subdir.FullName
-            gitRoot    = (git rev-parse --show-toplevel)
-        }
+	# Create a custom object with the subdirectory name, path and git root
+	[PSCustomObject]@{
+	    FolderName = $subdir.Name
+	    path       = $subdir.FullName
+	    gitRoot    = (git rev-parse --show-toplevel)
+	}
     }
 
     # Export the results to a csv file
@@ -56,8 +56,8 @@ function Find-Git-Roots {
 
     # Define a function to get the name property of an object
     [System.Func[System.Object, string]]$getName = {
-        param ($x)
-        $x.Name
+	param ($x)
+	$x.Name
     }
 
     # Join the roots and paths by their names and return an array of joined names
@@ -80,13 +80,13 @@ The path of the csv file where the results will be exported.
 function Export-Git-Roots {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [PSCustomObject[]]
-        $Results,
+	[Parameter(Mandatory = $true)]
+	[PSCustomObject[]]
+	$Results,
 
-        [Parameter(Mandatory = $true)]
-        [string]
-        $CsvPath
+	[Parameter(Mandatory = $true)]
+	[string]
+	$CsvPath
     )
 
     # Export the results to a csv file
@@ -106,9 +106,9 @@ The path of the csv file where the results are stored.
 function Import-Git-Roots {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $CsvPath
+	[Parameter(Mandatory = $true)]
+	[string]
+	$CsvPath
     )
 
     # Read the csv file and convert it to an array of objects
@@ -128,20 +128,20 @@ The array of custom objects to filter.
 function Filter-Git-Paths {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [PSCustomObject[]]
-        $Objects
+	[Parameter(Mandatory = $true)]
+	[PSCustomObject[]]
+	$Objects
     )
 
     # Define a class for paths
     class Path {
-        [string] $Name;
-        [string] $path;
+	[string] $Name;
+	[string] $path;
 
-        Path($name, $path) {
-            $this.path = $path
-            $this.Name = $name
-        }
+	Path($name, $path) {
+	    $this.path = $path
+	    $this.Name = $name
+	}
     }
 
     # Filter out the objects that have a valid git root and create an array of paths
@@ -161,23 +161,55 @@ The array of custom objects to filter.
 function Filter-Git-Roots {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [PSCustomObject[]]
-        $Objects
+	[Parameter(Mandatory = $true)]
+	[PSCustomObject[]]
+	$Objects
     )
 
     # Define a class for roots
     class Root {
-        [string] $Name;
-        [string] $gitRoot;
-        Root($name, $gitRoot) {
-            $this.name = $name
-            $this.gitRoot = $gitRoot
-        }
+	[string] $Name;
+	[string] $gitRoot;
+	Root($name, $gitRoot) {
+	    $this.name = $name
+	    $this.gitRoot = $gitRoot
+	}
     }
 
     # Filter out the objects that have a git root equal to their path and create an array of roots
+[Path[]]$Paths = @($z | ? { $_.gitRoot -ne "fatal: this operation must be run in a work tree" } | % {[Path]::new($_.FolderName, $_.path) })
     [Root[]]$Roots = @($Objects | Where-Object { ($_.gitRoot -replace('/', '\')) -eq $_.path } | ForEach-Object { [Root]::new($_.FolderName, $_.GitRoot) })
+
+$outerKeyDelegate = [Func[Path,String]] { $args[0].Name }
+$innerKeyDelegate = [Func[Root,String]] { $args[0].Name }
+
+#In this instance both joins will be using the same property name so only one function is needed
+[System.Func[System.Object, string]]$JoinFunction = {
+    param ($x)
+    $x.Name
+}
+
+#This is the delegate needed in GroupJoin() method invocations
+[System.Func[System.Object, [Collections.Generic.IEnumerable[System.Object]], System.Object]]$query = {
+    param(
+	$LeftJoin,
+	$RightJoinEnum
+    )
+    $RightJoin = [System.Linq.Enumerable]::SingleOrDefault($RightJoinEnum)
+
+    New-Object -TypeName PSObject -Property @{
+	Name = $RightJoin.Name;
+	GitRoot = $RightJoin.GitRoot;
+	Path = $LeftJoin.Path
+    }
+}
+
+#And lastly we call GroupJoin() and enumerate with ToArray()
+$q = [System.Linq.Enumerable]::ToArray(
+    [System.Linq.Enumerable]::GroupJoin($Paths, $Roots, $JoinFunction, $JoinFunction, $query)
+)  | ? { ($_.name -ne "") -and ($null -ne $_.name) }
+
+    $q | Out-GridView
 }
 
 <#
@@ -199,17 +231,17 @@ The function to get the name property of an object.
 function Join-Git-Names {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [Root[]]
-        $Roots,
+	[Parameter(Mandatory = $true)]
+	[Root[]]
+	$Roots,
 
-        [Parameter(Mandatory = $true)]
-        [Path[]]
-        $Paths,
+	[Parameter(Mandatory = $true)]
+	[Path[]]
+	$Paths,
 
-        [Parameter(Mandatory = $true)]
-        [System.Func[System.Object, string]]
-        $GetName
+	[Parameter(Mandatory = $true)]
+	[System.Func[System.Object, string]]
+	$GetName
     )
 
     # Join the roots and paths by their names and return an array of joined names
