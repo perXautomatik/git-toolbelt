@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../PowerShell-Scripts"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "C:/ProgramData/scoop/buckets/PerXautomatik/sboot_mods"
+		}
+	],
+	"settings": {
+		"powershell.cwd": "b:\\PF\\PowerShell-Scripts"
+	}
+}
