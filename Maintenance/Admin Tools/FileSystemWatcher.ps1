@@ -64,9 +64,9 @@ function New-FileSystemWatcher {
         Write-Error "Filter cannot be null or empty"
         return
     }
-
+# Set folder to watch and file filter
     # Create a new file system watcher object with the given parameters
-    $watcher = New-Object System.IO.FileSystemWatcher
+$watcher = New-Object System.IO.FileSystemWatcher
     $watcher.Path = $Path
     $watcher.Filter = $Filter
     $watcher.IncludeSubdirectories = $IncludeSubdirectories
@@ -127,20 +127,25 @@ try {
     # Create a file system watcher with the given parameters using New-FileSystemWatcher function
     $watcher = New-FileSystemWatcher -Path $SourceFolder -Filter $FileFilter
 
-    # Define an action to perform when a new file is created using Copy-File function
-    $action = {
-        # Get the full path of the new file
-        $path = $Event.SourceEventArgs.FullPath
+# Define action to perform when a new file is created
+$action = {
+    # Get the full path of the new file
+    $path = $Event.SourceEventArgs.FullPath
 
+    # Copy the file to the backup folder
         # Copy the file to the backup folder and write a log entry using Copy-File function
         Copy-File -SourceFile $path -BackupFolder $BackupFolder
-    }
+    # Write a log entry with the date, time and file name
+    $logline = "$(Get-Date), Copied, $path"
+    $logline
+    #Add-content "C:\Documents\log.txt" -value $logline
+}
 
-    # Register the action to watch for the Created event using Register-ObjectEvent cmdlet
-    Register-ObjectEvent $watcher "Created" -Action $action
+# Register the action to watch for the Created event
+Register-ObjectEvent $watcher "Created" -Action $action
 
-    # Keep the script running until stopped using while loop and sleep cmdlet
-    while ($true) {sleep 5}
+# Keep the script running until stopped
+while ($true) {sleep 5}
 }
 catch {
     # Write an error message and exit
