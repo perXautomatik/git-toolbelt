@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../PF/PowerShell"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../ps1"
+		}
+	],
+	"settings": {}
+}
