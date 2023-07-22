@@ -99,6 +99,12 @@ function Invoke-Git-Bash {
    git config --global color.ui auto
 
    # Set up git with your code editor
+
+#Atom Editor Setup
+  >> git config --global core.editor "atom --wait"
+#Sublime Text Setup
+  >> git config --global core.editor "C:Program Files/ SublimeText2 /sublime_text.exe' -n -w"
+#VSCode Setup
    git config --global core.editor $editorOption
 
    # Run the mintty command with the bash shell and the git command
