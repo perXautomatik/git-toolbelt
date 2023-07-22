@@ -29,9 +29,13 @@ function Invoke-GitTemp {
 
   # Create a temporary file and get its directory name
   $tempFile = New-TemporaryFile
+
+    #Use the Split-Path cmdlet to get the directory name of the temporary file. For example:
+
   $tempDir = Split-Path -Parent $tempFile
 
   # Create a subdirectory under the temporary directory with a unique name
+    #Use the New-Item cmdlet to create a subdirectory under the temporary directory. You can use any name you want for the subdirectory. For example:
   $prefix = (New-Guid).Guid
   $gitDir = New-Item -Path $tempDir -Name "$prefix.gitrepo" -ItemType Directory
 
