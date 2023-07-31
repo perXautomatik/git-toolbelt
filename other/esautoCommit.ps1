@@ -1,45 +1,105 @@
 # Get the folder path from the user input
-$folderPath = "B:\PF\AhkProjectFolder"
+$folderPath = "B:\PF\NoteTakingProjectFolder"
+$folderPath = $folderPath.trim("\\")
+install-module pseverything ;
+ Import-Module pseverything ; 
+
 
 # Use Everything to find all folders in the folder path
-$folders = es -path $folderPath -a "folder:"
-
+$filter = '<wholefilename:child:.git file:>|<wholefilename:child:.git folder:>'
+$filter = 'folder:'
+$folders =  Search-Everything  -PathInclude $folderPath -Filter $filter -global
+$folders += $folderPath
 # Define a custom comparator that sorts in ascending order by comparing the remainder of dividing by 3
-function comparatorX ($huba,$ruba) { 
-     return (
-        $huba.StartsWith($ruba)
-        ) }
-
-# Define a function to sort a list by a custom comparator
-function Sort-List {
-    param($list)
-    # Loop through the list from the second element
-    for ($i = 1; $i -lt $list.Count; $i++) {
-        
-        # Get the current element
-        $current = $list | select -Index $i
-        
-        # Initialize the index of the previous element
-        $j = $i - 1
-
-        # Loop backwards until the beginning of the list or until the comparator returns false
-        while ($j -ge 0 -and (comparatorX -huba $current -ruba $list[$j]) ) {
-            # Move the previous element one position forward
-            $list[$j + 1] = $list[$j]
-            # Decrement the index of the previous element
-            $j--
-        }
-        
-        # Insert the current element in the correct position
-        $list[$j + 1] = $current
+# Define a function to sort a list using insertion sort
+function checkPredicate($ax,$bx)
+{
+    # Check if either parameter is null
+    if ($ax -eq $null -or $bx -eq $null) {
+        # Return true
+        return $false
     }
-    # Return the sorted list
-    return $list
+    # Otherwise, proceed with the original logic
+    [string]$current = $ax
+    [string]$sortedj = $bx
+    [System.Boolean]$conclusion = $current.StartsWith($sortedj) # current starts with sortedj
+    return $conclusion
 }
 
+function Insertion-Sort {
+    param($list)
 
-# Call the function to sort the list by the custom comparator
-$sorted = Sort-List -list $folders
+    $unsorted = $list
+    $sortedx = [System.Collections.ArrayList]@()
+
+    $current = "";
+
+    # Loop through the list from the second element
+    for ($i = 0; $i -lt $unsorted.Count; $i++) {
+        
+        # Get the current element
+        $current = $unsorted[$i]
+                
+        if($sortedx.Count -eq 0) # empty array
+        {
+            $sortedx += $current
+        }
+        else
+        {
+            for($j = 0; $j -lt $sortedx.Count; $j++ )
+            {
+                $curStartWithJ = checkPredicate $current $sortedx[$j]  # current starts with sortedj
+                $jStartWithCur = checkPredicate $sortedx[$j] $current  # sortedj start with current
+                
+                $endOfArray = $j -eq ($sortedx.Count-1)
+    
+                if($curStartWithJ -or $jStartWithCur)
+                {                    
+                    if(($j -eq 0) -or ($endOfArray))
+                    {
+                        if ($jStartWithCur) { # begining of arrau
+                            $sortedx = @($current)+$sortedx
+                            break;
+                        } 
+                        else { # end of array 
+                            $sortedx +=$current
+                            break;
+                        }
+                    }
+                    else # middle of array
+                    {
+                        
+                        if($curStartWithJ)
+                        {$b = 1; $u = 0}
+                        else
+                        {$b = 0; $u = 1}
+
+                        $above = $sortedx | select -first $j
+                        $below = $sortedx | select -Skip $j
+                        
+                        $sortedx.Clear()
+
+                        $sortedx = @($above)+$current                        
+                        $sortedx = @($sortedx)+$below
+                        break;
+                    }     
+                }
+
+                if ($endOfArray)
+                {
+                    $sortedx +=$current
+                    break;
+                }
+            }              
+        }
+    }
+            
+    # Return the sorted list
+    return $sortedx
+}
+
+# Call the function to sort the list using insertion sort
+#$sorted = Insertion-Sort -list $folders
 
 # Display the sorted list
 $sorted
@@ -81,6 +141,11 @@ foreach ($folder in $sortedFolders) {
     # Add all the files in the folder to the staging area
     git add .
 
-    # Commit the changes with the message "folder name; toVerify"
-    git commit -m "$folderName; toVerify"
+    $xq = invoke-expression "git status"
+
+    if( $xq[-1] -ne "nothing to commit, working tree clean" )
+    {
+        # Commit the changes with the message "folder name; toVerify"
+        git commit -m "$folderName; toVerify"
+    }
 }
