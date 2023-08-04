@@ -1,1 +1,0 @@
-Url: https://stackoverflow.com/questions/34559553/create-a-temporary-directory-in-powershell
