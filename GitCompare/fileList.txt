@@ -1,6 +1,0 @@
-C:\Users\crbk01\AppData\Roaming\JetBrains\DataGrip2021.1\consoles\db\7c36b93a-8e8d-4cff-8993-17267a5fb816\Replace FilKoppling\SkapaFilHandelseKoppling22.sql
-C:\Users\crbk01\AppData\Roaming\JetBrains\DataGrip2021.1\consoles\db\7c36b93a-8e8d-4cff-8993-17267a5fb816\Replace FilKoppling\SkapaFilHandelseKoppling2.sql
-C:\Users\crbk01\AppData\Roaming\JetBrains\DataGrip2021.1\consoles\db\7c36b93a-8e8d-4cff-8993-17267a5fb816\Replace FilKoppling\SkapaFilHandelseKoppling.sql
-C:\Users\crbk01\AppData\Roaming\JetBrains\DataGrip2021.1\consoles\db\7c36b93a-8e8d-4cff-8993-17267a5fb816\Replace FilKoppling\SkapaFilHandelseKoppling(OLD_SentToMichaEL)2.sql
-C:\Users\crbk01\AppData\Roaming\JetBrains\DataGrip2021.1\consoles\db\7c36b93a-8e8d-4cff-8993-17267a5fb816\Replace FilKoppling\SkapaFilHandelseKoppling(OLD_SentToMichaEL).sql
-C:\Users\crbk01\AppData\Roaming\JetBrains\DataGrip2021.1\consoles\db\7c36b93a-8e8d-4cff-8993-17267a5fb816\Replace FilKoppling\Replace Filkoppling SkapaFilHandelseKoppling(OLD_SentToMichaEL).sql
