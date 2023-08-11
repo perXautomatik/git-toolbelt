@@ -1,7 +1,4 @@
-﻿Sure, I can help you with that. Here is a PowerShell script that does what you asked for:
-
-```powershell
-# Get the program name from the user
+﻿# Get the program name from the user
 $program = Read-Host -Prompt "Enter the program name"
 
 # Check if the program is installed by choco, winget or scoop
@@ -41,6 +38,9 @@ if ($scoop) {
     $manifest = Get-Content "$env:SCOOP\buckets\$package\bucket\$package.json"
     $args = $manifest | Select-String "installer.args"
     $args = $args.Line -replace '"installer.args":' -replace '"' -replace ","
+
+    # Check if the package was installed globally
+    $global = ($manifest | Select-String '"global": true').Count -gt 0
 }
 
 # Stop the process if currently running
@@ -76,10 +76,40 @@ if ($scoop) {
 # Check if the current user is an administrator
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
-# If not, restart the script as an administrator
+# If not, restart the script as an administrator only if needed
 if (-not $isAdmin) {
-    Start-Process powershell.exe "-File",('"{0}"' -f ($myinvocation.MyCommand.Definition)) -Verb RunAs
-}
-```
+    
+    # Check if the program was installed with choco or scoop with global flag
+    if ($choco -or ($scoop -and $global)) {
 
-I hope this helps. Is there anything else I can do for you?
+        # Restart the script as an administrator
+        Start-Process powershell.exe "-File",('"{0}"' -f ($myinvocation.MyCommand.Definition)) -Verb RunAs
+
+        # Exit the current script
+        Exit
+
+    } else {
+
+        # Try to install the program without elevation and catch any errors
+        try {
+
+            # Install the program with winget or scoop without global flag
+            if ($winget) {
+                winget install "$package" --version="$version" --silent --override="$args"
+            }
+
+            if ($scoop) {
+                scoop install "$package" --force --installer.args="$args"
+            }
+
+        } catch {
+
+            # If an error occurs, restart the script as an administrator
+            Start-Process powershell.exe "-File",('"{0}"' -f ($myinvocation.MyCommand.Definition)) -Verb RunAs
+
+            # Exit the current script
+            Exit
+
+        }
+    }
+}
