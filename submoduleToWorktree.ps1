@@ -71,11 +71,16 @@ function Remove-Submodule {
       }
     }
 
+    # Register where the submodule stores its config file before removing it
+    Push-Location $SubmodulePath # Change directory to the submodule path
+    $ConfigFile = git rev-parse --git-path config # Get the config file path using git rev-parse[^1^][1]
+    Pop-Location # Go back to the main repository directory
+
     # Deinit the submodule
     git submodule deinit $SubmodulePath -f
 
-    # Remove the submodule
-    git rm $SubmodulePath -f
+    # Remove the submodule and its folder using Remove-Item cmdlet[^2^][2]
+    Remove-Item -Path "$($ConfigFile)/../.." -Recurse -Force
 
     # Commit the changes
     git commit -m "Remove $SubmoduleName submodule"
