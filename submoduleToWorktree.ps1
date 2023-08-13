@@ -1,13 +1,29 @@
 # Define a function to remove a submodule
 function Remove-Submodule {
   param(
-    [string]$SubmoduleName, # The name of the submodule
     [string]$SubmodulePath, # The path of the submodule
-    [string]$SubmoduleUrl   # The remote URL of the submodule
+    [string]$SubmoduleUrl,  # The remote URL of the submodule
+    [string]$SubmoduleName  # The name of the submodule (optional)
   )
 
   # Try to remove the submodule and catch any errors
   try {
+    # If the submodule name is not given, try to get it from different sources
+    if (!$SubmoduleName) {
+      # Try to get the name from the .gitmodules file using git config
+      $SubmoduleName = git config --file .gitmodules --get-regexp path | Where-Object {$_ -match $SubmodulePath} | ForEach-Object {$_ -split " "} | Select-Object -Last 1
+
+      # If the name is still not found, try to get it from the .git/config file using git config
+      if (!$SubmoduleName) {
+        $SubmoduleName = git config --get-regexp url | Where-Object {$_ -match $SubmoduleUrl} | ForEach-Object {$_ -split " "} | Select-Object -Last 1
+      }
+
+      # If the name is still not found, try to get it from the last part of the submodule path
+      if (!$SubmoduleName) {
+        $SubmoduleName = Split-Path $SubmodulePath -Leaf
+      }
+    }
+
     # Deinit the submodule
     git submodule deinit $SubmodulePath -f
 
@@ -35,29 +51,3 @@ function Remove-Submodule {
     exit 1
   }
 }
-
-# Define a function to create a worktree from a branch
-function Create-Worktree {
-  param(
-    [string]$BranchName, # The name of the branch
-    [string]$WorktreePath # The path of the worktree
-  )
-
-  # Try to create a worktree and catch any errors
-  try {
-    # Create a new worktree from the branch
-    git worktree add $WorktreePath $BranchName
-
-    # Write a success message
-    Write-Host "Successfully created $WorktreePath worktree from $BranchName branch"
-  }
-  catch {
-    # Write an error message and exit
-    Write-Error "Failed to create $WorktreePath worktree from $BranchName branch: $_"
-    exit 1
-  }
-}
-
-# Call the functions with some example parameters
-Remove-Submodule -SubmoduleName "Foo" -SubmodulePath "submodules/Foo" -SubmoduleUrl "https://example.com/foo.git"
-Create-Worktree -BranchName "Foo" -WorktreePath "../Foo"
