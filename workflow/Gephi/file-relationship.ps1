@@ -1,5 +1,3 @@
-Hello, this is Bing. I can help you write a PowerShell script that results in a relationship graph, based on the description you provided. Here is a possible script that you can try:
-
 # Define the parameters for the script
 param(
     [Parameter(Mandatory=$true)]
@@ -218,10 +216,56 @@ if ($OutputPath) {
             Label = "Chunk: $($Node.Id)"
         }
 
-        # Add the node object to the nodes
+        # Add the node object to the nodes array
+        $NodesArray += $NodeObject
+    }
 
-Source: Conversation with Bing, 2023-08-21
-(1) Building a Chart Using PowerShell and Chart Controls. https://learn-powershell.net/2016/09/18/building-a-chart-using-powershell-and-chart-controls/.
-(2) Build PowerShell scripts with Microsoft Graph - Microsoft Graph. https://learn.microsoft.com/en-us/graph/tutorials/powershell.
-(3) Visualize your PowerShell reports with PowerShell charts. https://blog.ahasayen.com/visualize-your-powershell-reports-with-powershell-charts/.
-(4) undefined. https://msdn.microsoft.com/en-us/library/dd489233.aspx.
+    # Create an empty array to store the edges as custom objects with source, target, and weight properties
+    $EdgesArray = @()
+
+    # Loop through each node in the graph table 
+    foreach ($Node in $GraphTable.Values) {
+        # Loop through each edge in the node's edges array
+        foreach ($Edge in $Node.Edges) {
+            # Add the edge object to the edges array
+            $EdgesArray += $Edge
+        }
+    }
+
+    # Convert the nodes array and the edges array to CSV format
+    $NodesCSV = $NodesArray | ConvertTo-Csv -NoTypeInformation
+    $EdgesCSV = $EdgesArray | ConvertTo-Csv -NoTypeInformation
+
+    # Save the CSV files to the output path with appropriate names
+    $NodesCSV | Out-File -FilePath "$OutputPath\nodes.csv" -Encoding UTF8
+    $EdgesCSV | Out-File -FilePath "$OutputPath\edges.csv" -Encoding UTF8
+
+    # Write a success message and the output path
+    Write-Host "The graph relationships have been saved as CSV files to '$OutputPath'. You can import them to Gephi for visualization."
+}
+else {
+    # If it is not, display the graph using Out-GridView cmdlet
+
+    # Create an empty array to store the graph objects with id, label, and group properties
+    $GraphArray = @()
+
+    # Loop through each node in the graph table 
+    foreach ($Node in $GraphTable.Values) {
+        # Create a new graph object with its id, label, and group properties 
+        # The group property is used to color the nodes by their file ids
+        $GraphObject = New-Object -TypeName PSObject -Property @{
+            Id = $Node.Id 
+            Label = "Chunk: $($Node.Id)"
+            Group = ($Node.FileIds | Sort-Object | Get-Unique) -join ", "
+        }
+
+        # Add the graph object to the graph array
+        $GraphArray += $GraphObject
+    }
+
+    # Display the graph array using Out-GridView cmdlet with appropriate options
+    $GraphArray | Out-GridView -Title "Relationship Graph" -OutputMode None
+
+    # Write a success message and a tip for exploring the graph
+    Write-Host "The relationship graph has been displayed using Out-GridView. You can sort, filter, and group the nodes by their properties."
+}
